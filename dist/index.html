@@ -6,7 +6,7 @@
     <title>Whisker & Crime: Feline Forensics</title>
     <meta
       name="description"
-      content="A pixel detective game starring Barnaby, the blue-eyed cat detective, in The Case of the Vanishing Canary."
+      content="A dramatic pixel detective game starring Barnaby, the blue-eyed cat detective, with noir cutscenes, lightning, and The Case of the Vanishing Canary."
     />
     <link
       rel="icon"
@@ -42,16 +42,34 @@
             ></canvas>
 
             <div class="start-panel" id="startPanel">
-              <div class="noir-chip">1928 · Rain on stained glass</div>
-              <h2>Nothing is an accident.</h2>
+              <div class="noir-chip">Episode 01 · Storm over Milkglass Manor</div>
+              <h2>The bird knew too much.</h2>
               <p>
-                Play Barnaby, the fluffy blue-eyed forensic menace. Swat the room
-                apart carefully, reveal the hidden evidence, and keep the chaos
-                under control before the humans return.
+                Sir Reginald sang one forbidden name, then vanished before dawn.
+                Barnaby, the fluffy blue-eyed forensic menace, has four minutes
+                to break the room open and make the truth meow.
               </p>
               <button id="startButton" class="primary-button" type="button">
-                Start Case
+                Roll Cutscene
               </button>
+            </div>
+
+            <div class="cutscene hidden" id="cutscene" aria-live="polite">
+              <div class="lightning-scrim" aria-hidden="true"></div>
+              <div class="cutscene-card">
+                <div class="cutscene-kicker" id="cutsceneKicker">Cold open</div>
+                <h2 id="cutsceneTitle">The bird knew too much.</h2>
+                <p id="cutsceneCopy"></p>
+                <div class="cutscene-objective" id="cutsceneObjective"></div>
+                <div class="cutscene-actions">
+                  <button id="skipCutsceneButton" class="ghost-button" type="button">
+                    Skip
+                  </button>
+                  <button id="nextCutsceneButton" class="primary-button" type="button">
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="end-panel hidden" id="endPanel" aria-live="assertive">

@@ -1,6 +1,7 @@
 (() => {
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+  const screenWrap = canvas.closest(".screen-wrap");
   const portrait = document.getElementById("portrait");
   const pctx = portrait.getContext("2d");
 
@@ -11,6 +12,13 @@
   const endTitle = document.getElementById("endTitle");
   const endCopy = document.getElementById("endCopy");
   const restartButton = document.getElementById("restartButton");
+  const cutscene = document.getElementById("cutscene");
+  const cutsceneKicker = document.getElementById("cutsceneKicker");
+  const cutsceneTitle = document.getElementById("cutsceneTitle");
+  const cutsceneCopy = document.getElementById("cutsceneCopy");
+  const cutsceneObjective = document.getElementById("cutsceneObjective");
+  const nextCutsceneButton = document.getElementById("nextCutsceneButton");
+  const skipCutsceneButton = document.getElementById("skipCutsceneButton");
   const clockEl = document.getElementById("clock");
   const chaosText = document.getElementById("chaosText");
   const chaosBar = document.getElementById("chaosBar");
@@ -58,7 +66,14 @@
   let swatCooldown = 0;
   let sensePulse = 0;
   let sceneShake = 0;
+  let lightningFlash = 0;
+  let lightningTimer = 0.8;
+  let lightningFork = 0.5;
   let solved = false;
+  let cutsceneActive = false;
+  let cutsceneQueue = [];
+  let cutsceneIndex = 0;
+  let cutsceneDone = null;
 
   const state = {
     time: 240,
@@ -73,6 +88,84 @@
       buster: false,
     },
     message: "The canary cage is empty. Barnaby smells trouble.",
+  };
+
+  const INTRO_SCENES = [
+    {
+      kicker: "Cold open",
+      title: "The bird knew too much.",
+      copy:
+        "At 3:07 AM, Sir Reginald sang one forbidden name into the storm. By breakfast, the gilded cage was swinging empty and every human in Milkglass Manor was lying badly.",
+      objective: "Find the first trail before the house wakes up.",
+    },
+    {
+      kicker: "Lightning over the study",
+      title: "Enter Barnaby.",
+      copy:
+        "Blue eyes. Cream fur. Gray mask. A trench coat two sizes too dramatic. Barnaby does not ask permission. Barnaby asks gravity.",
+      objective: "Move, jump, swat, and let the room confess.",
+    },
+    {
+      kicker: "Partner in crime-solving",
+      title: "Cleo hears the walls blink.",
+      copy:
+        "Barnaby smells what humans hide. Cleo hears what wood remembers. Switch between them when the clues start talking in different languages.",
+      objective: "Use Scent and Whisker sense to crack the case.",
+      cta: "Play",
+    },
+  ];
+
+  const STORY_BEATS = {
+    trail: [
+      {
+        kicker: "Scene I",
+        title: "Feathers in the thunder.",
+        copy:
+          "A green trail burns across the dark like a confession with wings. Sir Reginald did not fly away. He was carried.",
+        objective: "Rip down the curtain and follow the glow.",
+        cta: "Continue",
+      },
+    ],
+    floor: [
+      {
+        kicker: "Scene II",
+        title: "Ink tells on the floor.",
+        copy:
+          "The bottle breaks. The floor drinks. A hidden seam appears, thin as a guilty smile.",
+        objective: "Switch to Cleo and read what the manor tried to bury.",
+        cta: "Continue",
+      },
+    ],
+    note: [
+      {
+        kicker: "Scene III",
+        title: "Meet at the garden gate.",
+        copy:
+          "The note is short, wet, and rude: 3 AM. Bring feathers. Somebody sold out a bird for peanut butter.",
+        objective: "Bring Barnaby back to sniff the chewed twine.",
+        cta: "Continue",
+      },
+    ],
+    scent: [
+      {
+        kicker: "Scene IV",
+        title: "Dog shampoo. Cheap peanut butter.",
+        copy:
+          "Barnaby knows that smell. Buster, the bulldog with the nervous paws, has been standing too close to the truth.",
+        objective: "Reach the pet door on the right and corner Buster.",
+        cta: "Continue",
+      },
+    ],
+    buster: [
+      {
+        kicker: "Final scene",
+        title: "The bulldog breaks.",
+        copy:
+          "Buster folds before the second meow. The Alley Pigeon paid him in peanut butter. Sir Reginald knew about the downtown breadcrumb syndicate.",
+        objective: "Case closed. Mostly. The curtains may need a lawyer.",
+        cta: "Close Case",
+      },
+    ],
   };
 
   const player = {
@@ -102,7 +195,7 @@
         h: 15,
         vx: 0,
         vy: 0,
-        dynamic: true,
+        dynamic: false,
         broken: false,
         precious: false,
         clue: true,
@@ -117,7 +210,7 @@
         h: 20,
         vx: 0,
         vy: 0,
-        dynamic: true,
+        dynamic: false,
         broken: false,
         precious: true,
       },
@@ -145,7 +238,7 @@
         h: 6,
         vx: 0,
         vy: 0,
-        dynamic: true,
+        dynamic: false,
         broken: false,
         precious: false,
       },
@@ -159,7 +252,7 @@
         h: 7,
         vx: 0,
         vy: 0,
-        dynamic: true,
+        dynamic: false,
         broken: false,
         precious: false,
       }
@@ -185,6 +278,8 @@
     swatCooldown = 0;
     sensePulse = 0;
     sceneShake = 0;
+    lightningFlash = 0.45;
+    lightningTimer = 1.2;
     solved = false;
     state.time = 240;
     state.chaos = 0;
@@ -223,7 +318,69 @@
     resetObjects();
     startPanel.classList.add("hidden");
     endPanel.classList.add("hidden");
+    cutscene.classList.add("hidden");
+    screenWrap.classList.remove("cinematic");
     updateHud();
+  }
+
+  function beginCutscene(scenes, onDone) {
+    cutsceneQueue = scenes;
+    cutsceneIndex = 0;
+    cutsceneDone = onDone;
+    cutsceneActive = true;
+    cutscene.classList.remove("hidden");
+    screenWrap.classList.add("cinematic");
+    sceneShake = Math.max(sceneShake, 3);
+    lightningFlash = 0.75;
+    showCutsceneCard();
+  }
+
+  function showCutsceneCard() {
+    const scene = cutsceneQueue[cutsceneIndex];
+    if (!scene) {
+      endCutscene();
+      return;
+    }
+    cutsceneKicker.textContent = scene.kicker;
+    cutsceneTitle.textContent = scene.title;
+    cutsceneCopy.textContent = scene.copy;
+    cutsceneObjective.textContent = scene.objective;
+    nextCutsceneButton.textContent = scene.cta || (cutsceneIndex === cutsceneQueue.length - 1 ? "Continue" : "Next");
+  }
+
+  function endCutscene() {
+    cutscene.classList.add("hidden");
+    screenWrap.classList.remove("cinematic");
+    cutsceneActive = false;
+    const done = cutsceneDone;
+    cutsceneDone = null;
+    cutsceneQueue = [];
+    cutsceneIndex = 0;
+    if (done) done();
+  }
+
+  function advanceCutscene() {
+    cutsceneIndex += 1;
+    lightningFlash = 0.62;
+    sceneShake = Math.max(sceneShake, 2.5);
+    if (cutsceneIndex >= cutsceneQueue.length) {
+      endCutscene();
+    } else {
+      showCutsceneCard();
+    }
+  }
+
+  function storyBeat(key) {
+    if (!STORY_BEATS[key]) return;
+    beginCutscene(STORY_BEATS[key], () => {
+      if (key === "buster") {
+        finish(
+          true,
+          "Case closed",
+          "Buster folds before the second meow. The Alley Pigeon took Sir Reginald to the breadcrumb syndicate, and Barnaby leaves only moderate structural damage behind."
+        );
+      }
+    });
   }
 
   function rectsOverlap(a, b) {
@@ -262,7 +419,7 @@
       setMessage(reason, player.x - 12, player.y - 12, amount > 12 ? colors.red : colors.amber);
     }
     if (state.chaos >= 100) {
-      finish(false, "Bathroom jail", "The humans returned to a crime scene inside the crime scene. The investigation ends behind a locked bathroom door.");
+      finish(false, "Bathroom jail", "Thunder covers many crimes. It does not cover the priceless vase, the clock, or the fact that Barnaby looks wildly satisfied.");
     }
   }
 
@@ -272,6 +429,7 @@
     setMessage(text, player.x - 14, player.y - 14, colors.green);
     addParticles(player.x + player.w / 2, player.y + 8, 18, colors.green, 2.3);
     pulse(player.x + player.w / 2, player.y + 10, colors.green);
+    if (STORY_BEATS[key]) storyBeat(key);
     updateHud();
   }
 
@@ -297,7 +455,7 @@
   }
 
   function jump() {
-    if (!started || ended) return;
+    if (!started || ended || cutsceneActive) return;
     if (player.onGround) {
       player.vy = -6.1;
       player.onGround = false;
@@ -306,7 +464,7 @@
   }
 
   function swat() {
-    if (!started || ended || swatCooldown > 0) return;
+    if (!started || ended || cutsceneActive || swatCooldown > 0) return;
     swatCooldown = 0.26;
     state.swats += 1;
     const paw = {
@@ -351,7 +509,7 @@
   }
 
   function inspectNearby() {
-    if (!senseOn || !started || ended) return;
+    if (!senseOn || !started || ended || cutsceneActive) return;
     const centerX = player.x + player.w / 2;
 
     if (activeCat === "barnaby") {
@@ -369,7 +527,8 @@
   }
 
   function update(dt) {
-    if (!started || ended) return;
+    updateStorm(dt);
+    if (!started || ended || cutsceneActive) return;
     state.time -= dt;
     if (state.time <= 0) {
       finish(false, "The humans are home", "The owner stepped into the study before Barnaby could name the culprit. The canary remains a cold case.");
@@ -418,6 +577,18 @@
     updateHud();
   }
 
+  function updateStorm(dt) {
+    lightningTimer -= dt;
+    lightningFlash = Math.max(0, lightningFlash - dt * 2.8);
+    if (lightningTimer <= 0) {
+      lightningFork = Math.random();
+      lightningFlash = Math.random() > 0.38 ? 0.55 : 0.18;
+      sceneShake = Math.max(sceneShake, lightningFlash > 0.4 ? 2.4 : 0);
+      lightningTimer = 2.4 + Math.random() * 3.8;
+    }
+    sceneShake = Math.max(0, sceneShake - dt * 10);
+  }
+
   function collideFurniture() {
     const shelves = [
       { x: 192, y: 105, w: 53, h: 7 },
@@ -444,6 +615,7 @@
         sceneShake = 7;
         const ink = objects.find((o) => o.id === "ink" && !o.broken);
         if (ink) {
+          ink.dynamic = true;
           ink.vx = -1.9;
           ink.vy = -2.4;
         }
@@ -508,7 +680,7 @@
       solved = true;
       state.evidence.buster = true;
       updateHud();
-      setTimeout(() => finish(true, "Case closed", "Buster folds under coordinated meows. The Alley Pigeon took Sir Reginald to the breadcrumb syndicate, and Barnaby leaves only moderate structural damage behind."), 450);
+      storyBeat("buster");
     } else if (player.x > 238) {
       setMessage("Pet door ahead. Buster is pacing by the garden gate.", 184, 82, colors.amber);
     }
@@ -557,6 +729,7 @@
     drawPlayer();
     drawEffects();
     drawDialogue();
+    drawLightning();
     ctx.restore();
   }
 
@@ -598,6 +771,31 @@
     fill(24, 43, 24, 13, "#20425a");
     fill(53, 43, 24, 13, "#b07b34");
     fill(15, 63, 74, 5, "#36201e");
+  }
+
+  function drawLightning() {
+    if (lightningFlash <= 0) return;
+    ctx.globalAlpha = Math.min(0.72, lightningFlash);
+    fill(0, 0, W, H, "#d9f2ff");
+    ctx.globalAlpha = Math.min(1, lightningFlash + 0.25);
+    ctx.strokeStyle = "#f6fdff";
+    ctx.lineWidth = 2;
+    const startX = 218 + lightningFork * 54;
+    ctx.beginPath();
+    ctx.moveTo(startX, 0);
+    ctx.lineTo(startX - 11, 25);
+    ctx.lineTo(startX + 5, 42);
+    ctx.lineTo(startX - 8, 70);
+    ctx.lineTo(startX + 11, 92);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#57b7e8";
+    ctx.beginPath();
+    ctx.moveTo(startX - 4, 36);
+    ctx.lineTo(startX - 31, 60);
+    ctx.lineTo(startX - 20, 77);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
   function drawRain() {
@@ -928,6 +1126,11 @@
     if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "Tab"].includes(event.key)) {
       event.preventDefault();
     }
+    if (cutsceneActive && !event.repeat) {
+      if (event.key === "Enter" || event.key === " ") advanceCutscene();
+      if (event.key === "Escape") endCutscene();
+      return;
+    }
     keys.add(event.key);
     if ((event.key === " " || event.key === "w" || event.key === "W" || event.key === "ArrowUp") && !event.repeat) jump();
     if ((event.key === "f" || event.key === "F" || event.key === "x" || event.key === "X") && !event.repeat) swat();
@@ -965,8 +1168,16 @@
     });
   });
 
-  startButton.addEventListener("click", resetGame);
-  restartButton.addEventListener("click", resetGame);
+  startButton.addEventListener("click", () => {
+    startPanel.classList.add("hidden");
+    beginCutscene(INTRO_SCENES, resetGame);
+  });
+  restartButton.addEventListener("click", () => {
+    endPanel.classList.add("hidden");
+    beginCutscene(INTRO_SCENES, resetGame);
+  });
+  nextCutsceneButton.addEventListener("click", advanceCutscene);
+  skipCutsceneButton.addEventListener("click", endCutscene);
 
   resetObjects();
   drawPortrait();
