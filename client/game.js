@@ -20,6 +20,8 @@
   const endTitle = document.getElementById("endTitle");
   const endCopy = document.getElementById("endCopy");
   const endStats = document.getElementById("endStats");
+  const pausePanel = document.getElementById("pausePanel");
+  const resumeButton = document.getElementById("resumeButton");
   const restartButton = document.getElementById("restartButton");
   const cutscene = document.getElementById("cutscene");
   const cutsceneKicker = document.getElementById("cutsceneKicker");
@@ -193,6 +195,7 @@
   let gameMode = "story";
   let started = false;
   let ended = false;
+  let paused = false;
   let activeCat = "barnaby";
   let senseOn = false;
   let barnabySense = false;
@@ -556,6 +559,8 @@
 
   function resetGame() {
     stopOnline();
+    paused = false;
+    pausePanel.classList.add("hidden");
     gameMode = "story";
     started = true;
     ended = false;
@@ -626,6 +631,8 @@
 
   function resetMultiplayer() {
     stopOnline();
+    paused = false;
+    pausePanel.classList.add("hidden");
     gameMode = "multi";
     started = true;
     ended = false;
@@ -2011,7 +2018,7 @@
     const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);
     lastTime = time;
     pollGamepad();
-    update(dt);
+    if (!paused) update(dt);
     draw();
     drawPortrait();
     requestAnimationFrame(loop);
@@ -2102,6 +2109,14 @@
       if (event.key === "Escape") endCutscene();
       return;
     }
+    if (event.key === "Escape" && !event.repeat && !online.enabled) {
+      if (started && !ended) {
+        paused = !paused;
+        pausePanel.classList.toggle("hidden", !paused);
+        if (paused) resumeButton.focus();
+      }
+      return;
+    }
     keys.add(event.key);
     if (online.enabled) {
       refreshOnlineInput();
@@ -2164,6 +2179,10 @@
   });
 
   bindMouseControls();
+  resumeButton.addEventListener("click", () => {
+    paused = false;
+    pausePanel.classList.add("hidden");
+  });
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
