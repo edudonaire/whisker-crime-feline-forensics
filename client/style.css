@@ -205,6 +205,14 @@ h1 {
   min-height: min(62svh, 34rem);
 }
 
+.screen-wrap.case-won {
+  box-shadow: 0 0 0 1px rgba(241, 177, 75, 0.3), 0 0 32px rgba(241, 177, 75, 0.12);
+}
+
+.screen-wrap.case-lost {
+  box-shadow: 0 0 0 1px rgba(224, 78, 86, 0.28), 0 0 28px rgba(224, 78, 86, 0.1);
+}
+
 #game {
   width: 100%;
   height: 100%;

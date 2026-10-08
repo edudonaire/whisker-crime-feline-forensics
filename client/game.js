@@ -782,6 +782,7 @@
     endPanel.classList.add("hidden");
     cutscene.classList.add("hidden");
     screenWrap.classList.remove("cinematic");
+    screenWrap.classList.remove("case-won", "case-lost");
     whodunitPanel.classList.add("hidden");
     setEvidenceLabels(STORY_LABELS);
     updateHud();
@@ -855,6 +856,7 @@
     endPanel.classList.add("hidden");
     cutscene.classList.add("hidden");
     screenWrap.classList.remove("cinematic");
+    screenWrap.classList.remove("case-won", "case-lost");
     whodunitPanel.classList.remove("hidden");
     setEvidenceLabels(MULTI_LABELS);
     renderWhodunit();
@@ -1161,6 +1163,7 @@
       endTitle.textContent = snapshot.end.title;
       endCopy.textContent = snapshot.end.copy;
       renderEndStats();
+      celebrateFinish(snapshot.end.title?.includes("saved") || snapshot.end.chip?.includes("closed"));
       endPanel.classList.remove("hidden");
     } else {
       endPanel.classList.add("hidden");
@@ -1291,6 +1294,24 @@
     caseGradeLetter.textContent = grade;
     caseGradeCopy.textContent = gradeCopy;
     endStats.innerHTML = `<span>Score ${score}</span><span>${clues}/5 clues</span><span>${state.swats} swats</span><span>${Math.round(state.chaos)}% chaos</span>`;
+  }
+
+  function celebrateFinish(won) {
+    screenWrap.classList.toggle("case-won", won);
+    screenWrap.classList.toggle("case-lost", !won);
+    lightningFlash = won ? 0.5 : 0.18;
+    sceneShake = won ? 1.8 : 3;
+    const burstColor = won ? colors.gold : colors.red;
+    for (let i = 0; i < (won ? 28 : 14); i += 1) {
+      particles.push({
+        x: 24 + Math.random() * (VIEW_W - 48),
+        y: 30 + Math.random() * 70,
+        vx: (Math.random() - 0.5) * 2.8,
+        vy: -0.4 - Math.random() * 1.8,
+        life: 0.9 + Math.random() * 0.8,
+        color: burstColor,
+      });
+    }
   }
 
   function addParticles(x, y, count, color, spread = 1.6) {
@@ -1746,6 +1767,7 @@
     if (ended) return;
     ended = true;
     playTone(won ? 880 : 150, won ? 0.28 : 0.2, won ? "sine" : "sawtooth", 0.035);
+    celebrateFinish(won);
     endChip.textContent = chip;
     endTitle.textContent = won ? "Sir Reginald is saved." : "The trail goes cold.";
     endCopy.textContent = `${copy} Security cam recap: ${state.swats} swats, ${state.broken} broken objects, ${Math.round(state.chaos)}% chaos.`;
