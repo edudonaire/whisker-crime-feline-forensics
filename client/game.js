@@ -1,6 +1,8 @@
 (() => {
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+  const barnabyArt = new Image();
+  barnabyArt.src = "./assets/barnaby-detective.png";
   const screenWrap = canvas.closest(".screen-wrap");
   const portrait = document.getElementById("portrait");
   const pctx = portrait.getContext("2d");
@@ -1473,8 +1475,8 @@
       addParticles(curtain.x + 12, curtain.y + 8 + curtain.hp * 18, 9, "#8c2d35", 1.8);
       if (curtain.hp <= 0) {
         curtain.falling = true;
-        markEvidence("trail", "A neon feather trail glows behind the drapes.", actor);
         addChaos(8, "The curtains surrender.");
+        setMessage("The curtain falls. Now read the trail with Barnaby's sense.", curtain.x - 30, curtain.y + 20, colors.amber);
       } else {
         setMessage("The curtain rings groan.", curtain.x - 30, curtain.y + 20, colors.amber);
       }
@@ -1495,7 +1497,7 @@
     const centerX = player.x + player.w / 2;
 
     if (activeCat === "barnaby") {
-      if (Math.abs(centerX - 370) < 52 && !state.evidence.trail) {
+      if (curtain.fallen && Math.abs(centerX - 370) < 52 && !state.evidence.trail) {
         markEvidence("trail", "Oily feathers. The trail climbs to the curtain rod.");
       }
       if (state.evidence.floor && Math.abs(centerX - 151) < 34 && !state.evidence.scent) {
@@ -1517,7 +1519,7 @@
     const barnabyX = player.x + player.w / 2;
     const cleoX = player2.x + player2.w / 2;
     if (barnabySense) {
-      if (Math.abs(barnabyX - 370) < 52 && !state.evidence.trail) {
+      if (curtain.fallen && Math.abs(barnabyX - 370) < 52 && !state.evidence.trail) {
         markEvidence("trail", "Barnaby finds a feather trail that refuses to behave.", player);
       }
       if (state.evidence.floor && Math.abs(barnabyX - 151) < 38 && !state.evidence.scent) {
@@ -2131,6 +2133,20 @@
 
   function drawBarnaby(x, y, facing, pawOut, actor = player) {
     const bob = actor.onGround ? Math.sin(actor.step * 11) * 1 : 0;
+    if (barnabyArt.complete && barnabyArt.naturalWidth > 0) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = actor === player && activeCat === "barnaby" ? 1 : 0.9;
+      if (facing < 0) {
+        ctx.translate(x + 24, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(barnabyArt, -18, y - 38 + bob, 60, 60);
+      } else {
+        ctx.drawImage(barnabyArt, x - 18, y - 38 + bob, 60, 60);
+      }
+      ctx.restore();
+      return;
+    }
     const fx = facing < 0 ? -1 : 1;
     const px = (dx) => x + (fx < 0 ? player.w - dx : dx);
     fill(px(4), y + 7 + bob, 18, 13, colors.cream2);

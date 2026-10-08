@@ -101,6 +101,16 @@ function serveAsset(pathname) {
       },
     });
   }
+  if (pathname === "/assets/barnaby-detective.png") {
+    const binary = atob(ASSETS.barnabyArt);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new Response(bytes, {
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
   return new Response(ASSETS.html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
@@ -411,6 +421,11 @@ function swatActor(room, actor) {
   for (const obj of room.objects) {
     if (obj.broken) continue;
     if (rectsOverlap(paw, obj)) {
+      if (obj.id === "ink" && !room.evidence.floor && !(actor.cat === "cleo" && actor.sense)) {
+        hit = true;
+        room.message = "The ink splashes, but Cleo must read the hidden clue.";
+        continue;
+      }
       hit = true;
       obj.dynamic = true;
       obj.vx += actor.facing * 2.35;
@@ -423,7 +438,6 @@ function swatActor(room, actor) {
     room.curtain.hp -= 1;
     if (room.curtain.hp <= 0) {
       room.curtain.falling = true;
-      markEvidence(room, "trail", "A neon feather trail glows behind the drapes.");
       addChaos(room, 8, "The curtains surrender.");
     } else {
       room.message = "The curtain rings groan.";
@@ -483,7 +497,7 @@ function inspectRoom(room) {
   const barnabyX = barnaby.x + barnaby.w / 2;
   const cleoX = cleo.x + cleo.w / 2;
   if (barnaby.sense) {
-    if (Math.abs(barnabyX - 266) < 52 && !room.evidence.trail) {
+    if (room.curtain.fallen && Math.abs(barnabyX - 266) < 52 && !room.evidence.trail) {
       markEvidence(room, "trail", "Barnaby finds a feather trail that refuses to behave.");
     }
     if (room.evidence.floor && Math.abs(barnabyX - 151) < 38 && !room.evidence.scent) {
