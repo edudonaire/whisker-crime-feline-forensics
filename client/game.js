@@ -20,6 +20,8 @@
   const endTitle = document.getElementById("endTitle");
   const endCopy = document.getElementById("endCopy");
   const endStats = document.getElementById("endStats");
+  const caseGradeLetter = document.getElementById("caseGradeLetter");
+  const caseGradeCopy = document.getElementById("caseGradeCopy");
   const pausePanel = document.getElementById("pausePanel");
   const resumeButton = document.getElementById("resumeButton");
   const restartButton = document.getElementById("restartButton");
@@ -1166,6 +1168,10 @@
   function renderEndStats() {
     const clues = Object.values(state.evidence).filter(Boolean).length;
     const score = Math.max(0, clues * 250 + Math.floor(state.time) * 2 - Math.round(state.chaos) * 3);
+    const grade = score >= 1100 ? "S" : score >= 850 ? "A" : score >= 600 ? "B" : "C";
+    const gradeCopy = grade === "S" ? "Masterful detective work." : grade === "A" ? "Clean work under pressure." : grade === "B" ? "The clues survived the chaos." : "The trail is still worth following.";
+    caseGradeLetter.textContent = grade;
+    caseGradeCopy.textContent = gradeCopy;
     endStats.innerHTML = `<span>Score ${score}</span><span>${clues}/5 clues</span><span>${state.swats} swats</span><span>${Math.round(state.chaos)}% chaos</span>`;
   }
 
