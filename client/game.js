@@ -219,6 +219,7 @@
   let currentMystery = null;
   let audioContext = null;
   let cameraX = 0;
+  let idleTime = 0;
 
   function playTone(frequency, duration = 0.08, type = "square", volume = 0.025) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -600,6 +601,7 @@
 
   function resetGame() {
     stopOnline();
+    idleTime = 0;
     paused = false;
     pausePanel.classList.add("hidden");
     gameMode = "story";
@@ -672,6 +674,7 @@
 
   function resetMultiplayer() {
     stopOnline();
+    idleTime = 0;
     paused = false;
     pausePanel.classList.add("hidden");
     gameMode = "multi";
@@ -1404,6 +1407,20 @@
       return;
     }
     state.time -= dt;
+    idleTime += dt;
+    if (gameMode === "story" && idleTime > 9) {
+      const hint = !state.evidence.trail
+        ? "The curtain is hiding the first trail. Follow the storm glow."
+        : !state.evidence.floor
+          ? "Switch to Cleo, use Whisker sense, and inspect the ink."
+          : !state.evidence.note
+            ? "Cleo can read the note near the hidden floor compartment."
+            : !state.evidence.scent
+              ? "Switch back to Barnaby and follow the scent toward the corridor."
+              : "The pet door is ahead. Buster is waiting at the far end.";
+      setMessage(hint, player.x - 18, player.y - 18, colors.amber);
+      idleTime = 0;
+    }
     if (state.time <= 0) {
       finish(false, "The humans are home", "The owner stepped into the study before Barnaby could name the culprit. The canary remains a cold case.");
       return;
@@ -2169,6 +2186,7 @@
       heldDirection = "";
     };
     canvas.addEventListener("pointerdown", (event) => {
+      idleTime = 0;
       if (event.button === 2) {
         event.preventDefault();
         online.enabled ? queueOnlineAction("jump") : jump();
@@ -2197,6 +2215,7 @@
   }
 
   document.addEventListener("keydown", (event) => {
+    idleTime = 0;
     if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "Tab"].includes(event.key)) {
       event.preventDefault();
     }
@@ -2282,6 +2301,7 @@
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
+      idleTime = 0;
       const action = button.dataset.action;
       if (online.enabled) {
         if (action === "jump") queueOnlineAction("jump");
