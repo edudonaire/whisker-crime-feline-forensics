@@ -208,6 +208,62 @@ h1 {
   display: none;
 }
 
+.clue-toast {
+  position: absolute;
+  z-index: 4;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(23rem, calc(100% - 2rem));
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(115, 208, 128, 0.55);
+  border-radius: 6px;
+  color: var(--paper);
+  background: rgba(10, 19, 14, 0.94);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38), 0 0 18px rgba(115, 208, 128, 0.12);
+  opacity: 0;
+  transform: translateY(0.7rem);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.clue-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.clue-toast-mark {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #08110b;
+  background: var(--green);
+  font-weight: 900;
+}
+
+.clue-toast strong,
+.clue-toast span:last-child {
+  display: block;
+}
+
+.clue-toast strong {
+  color: var(--green);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.clue-toast span:last-child {
+  margin-top: 0.15rem;
+  color: #e3d8c5;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .cutscene {
   display: grid;
   place-items: center;
@@ -685,6 +741,16 @@ button:disabled {
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.4;
+}
+
+.room-readiness {
+  margin-top: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border-left: 3px solid var(--blue);
+  color: var(--blue);
+  background: rgba(87, 183, 232, 0.07);
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .player-list {

@@ -44,8 +44,12 @@
   const onlinePanel = document.getElementById("onlinePanel");
   const onlineRoomCode = document.getElementById("onlineRoomCode");
   const onlineStatus = document.getElementById("onlineStatus");
+  const roomReadiness = document.getElementById("roomReadiness");
   const onlinePlayers = document.getElementById("onlinePlayers");
   const copyInviteButton = document.getElementById("copyInviteButton");
+  const clueToast = document.getElementById("clueToast");
+  const clueToastTitle = document.getElementById("clueToastTitle");
+  const clueToastCopy = document.getElementById("clueToastCopy");
   const languageSelect = document.getElementById("languageSelect");
   const languageLabel = document.getElementById("languageLabel");
 
@@ -179,6 +183,7 @@
   let lightningFork = 0.5;
   let solved = false;
   let cutsceneActive = false;
+  let clueToastTimer = null;
   let cutsceneQueue = [];
   let cutsceneIndex = 0;
   let cutsceneDone = null;
@@ -914,12 +919,17 @@
     if (payload.role) online.role = payload.role;
     if (Number.isInteger(payload.slot)) online.slot = payload.slot;
     if (snapshot.code) online.roomCode = snapshot.code;
+    const previousEvidence = { ...state.evidence };
     currentMystery = snapshot.mystery;
     state.time = snapshot.time;
     state.chaos = snapshot.chaos;
     state.swats = snapshot.swats;
     state.broken = snapshot.broken;
     state.evidence = { ...snapshot.evidence };
+    if (online.enabled) {
+      const newClue = ["trail", "floor", "note", "scent", "buster"].find((key) => state.evidence[key] && !previousEvidence[key]);
+      if (newClue) showClueToast(snapshot.mystery?.reveals?.[newClue] || newClue);
+    }
     state.message = snapshot.message;
     const barnaby = snapshot.actors?.[0];
     const cleo = snapshot.actors?.[1];
@@ -956,6 +966,9 @@
       snapshot.status === "ended"
         ? "Case closed for everyone in the room."
         : `${role} · ${clueCount}/4 clues · screens syncing live`;
+    roomReadiness.textContent = clueCount >= 4
+      ? "Clue board ready. Compare motives and make one accusation together."
+      : `${4 - clueCount} more clue${4 - clueCount === 1 ? "" : "s"} needed before the accusation board unlocks.`;
     onlinePlayers.innerHTML = (snapshot.players || [])
       .map(
         (p) =>
@@ -1048,6 +1061,15 @@
     floaters.push({ text, x, y, color, life: 1.4, vy: -0.22 });
   }
 
+  function showClueToast(text) {
+    const titles = { en: "New clue", es: "Nueva pista", "pt-BR": "Nova pista", fr: "Nouvel indice", de: "Neuer Hinweis", it: "Nuovo indizio", ja: "新しい手がかり" };
+    clueToastTitle.textContent = titles[language] || titles.en;
+    clueToastCopy.textContent = text;
+    clueToast.classList.add("visible");
+    clearTimeout(clueToastTimer);
+    clueToastTimer = setTimeout(() => clueToast.classList.remove("visible"), 4200);
+  }
+
   function addParticles(x, y, count, color, spread = 1.6) {
     for (let i = 0; i < count; i++) {
       particles.push({
@@ -1084,6 +1106,7 @@
         ? currentMystery.reveals[key]
         : text;
     setMessage(shownText, actor.x - 14, actor.y - 14, colors.green);
+    showClueToast(shownText);
     addParticles(actor.x + actor.w / 2, actor.y + 8, 18, colors.green, 2.3);
     pulse(actor.x + actor.w / 2, actor.y + 10, colors.green);
     if (gameMode === "multi") {
