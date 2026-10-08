@@ -290,6 +290,43 @@
     },
   ];
 
+  const INTRO_SCENES_LOCALIZED = {
+    es: [
+      { kicker: "Apertura", title: "El pajaro sabia demasiado.", copy: "A las 3:07 AM, Sir Reginald canto un nombre prohibido bajo la tormenta. Al amanecer, la jaula dorada estaba vacia y todos en la mansion Milkglass mentian fatal.", objective: "Encuentra el primer rastro antes de que despierte la casa." },
+      { kicker: "Rayos sobre el estudio", title: "Entra Barnaby.", copy: "Ojos azules. Pelaje crema. Mascara gris. Un abrigo dos tallas demasiado dramatico. Barnaby no pide permiso: le pide cuentas a la gravedad.", objective: "Muevete, salta, golpea y deja que la sala confiese." },
+      { kicker: "Pareja de detectives", title: "Cleo escucha parpadear las paredes.", copy: "Barnaby huele lo que los humanos esconden. Cleo escucha lo que la madera recuerda. Cambia entre ellos cuando las pistas hablen idiomas distintos.", objective: "Usa el olfato y los bigotes para resolver el caso.", cta: "Jugar" },
+    ],
+    "pt-BR": [
+      { kicker: "Abertura", title: "O passaro sabia demais.", copy: "As 3:07 da madrugada, Sir Reginald cantou um nome proibido na tempestade. Ao amanhecer, a gaiola dourada balancava vazia e todos na Mansao Milkglass mentiam muito mal.", objective: "Encontre a primeira trilha antes que a casa acorde." },
+      { kicker: "Raios sobre o escritorio", title: "Entre, Barnaby.", copy: "Olhos azuis. Pelo creme. Mascara cinza. Um sobretudo dramatico demais. Barnaby nao pede permissao. Barnaby desafia a gravidade.", objective: "Ande, pule, use a pata e deixe a sala confessar." },
+      { kicker: "Dupla de investigadores", title: "Cleo ouve as paredes piscarem.", copy: "Barnaby sente o que os humanos escondem. Cleo ouve o que a madeira lembra. Troque entre eles quando as pistas falarem linguas diferentes.", objective: "Use o olfato e os bigodes para desvendar o caso.", cta: "Jogar" },
+    ],
+    fr: [
+      { kicker: "Ouverture", title: "L'oiseau en savait trop.", copy: "A 3 h 07, Sir Reginald a chante un nom interdit dans l'orage. Au petit matin, la cage doree etait vide et tout le monde au manoir Milkglass mentait tres mal.", objective: "Trouver la premiere piste avant le reveil de la maison." },
+      { kicker: "Eclairs sur le bureau", title: "Entrez, Barnaby.", copy: "Yeux bleus. Fourrure creme. Masque gris. Un trench deux fois trop dramatique. Barnaby ne demande pas la permission: il defie la gravite.", objective: "Bougez, sautez, frappez et laissez la piece avouer." },
+      { kicker: "Duo d'enqueteurs", title: "Cleo entend les murs cligner.", copy: "Barnaby sent ce que les humains cachent. Cleo entend ce dont le bois se souvient. Changez de chat quand les indices changent de langage.", objective: "Utilisez le flair et les moustaches pour resoudre l'affaire.", cta: "Jouer" },
+    ],
+    de: [
+      { kicker: "Vorspann", title: "Der Vogel wusste zu viel.", copy: "Um 3:07 Uhr sang Sir Reginald einen verbotenen Namen in den Sturm. Zum Fruehstueck schwang der goldene Kaefig leer und jeder im Milkglass Manor log miserabel.", objective: "Finde die erste Spur, bevor das Haus erwacht." },
+      { kicker: "Blitze ueber dem Arbeitszimmer", title: "Auftritt Barnaby.", copy: "Blaue Augen. Cremefarbenes Fell. Graue Maske. Ein Trenchcoat, der viel zu dramatisch ist. Barnaby fragt nicht um Erlaubnis. Barnaby fragt die Schwerkraft.", objective: "Bewege dich, springe, schlage zu und lass den Raum gestehen." },
+      { kicker: "Ermittlerduo", title: "Cleo hoert die Waende blinzeln.", copy: "Barnaby riecht, was Menschen verbergen. Cleo hoert, woran Holz sich erinnert. Wechsle zwischen ihnen, wenn die Hinweise verschiedene Sprachen sprechen.", objective: "Nutze Geruch und Schnurrhaare, um den Fall zu loesen.", cta: "Spielen" },
+    ],
+    it: [
+      { kicker: "Apertura", title: "L'uccello ne sapeva troppo.", copy: "Alle 3:07, Sir Reginald ha cantato un nome proibito nella tempesta. A colazione, la gabbia dorata oscillava vuota e tutti a Milkglass Manor mentivano malissimo.", objective: "Trova la prima traccia prima che la casa si svegli." },
+      { kicker: "Fulmini sullo studio", title: "Entra Barnaby.", copy: "Occhi blu. Pelo crema. Maschera grigia. Un impermeabile fin troppo teatrale. Barnaby non chiede permesso. Barnaby sfida la gravita.", objective: "Muoviti, salta, colpisci e lascia che la stanza confessi." },
+      { kicker: "Coppia di investigatori", title: "Cleo sente le pareti sbattere le palpebre.", copy: "Barnaby fiuta cio che gli umani nascondono. Cleo sente cio che il legno ricorda. Passa dall'uno all'altra quando gli indizi cambiano lingua.", objective: "Usa fiuto e baffi per risolvere il caso.", cta: "Gioca" },
+    ],
+    ja: [
+      { kicker: "オープニング", title: "鳥は知りすぎていた。", copy: "午前3時07分、サー・レジナルドは嵐の中で禁じられた名前を歌った。朝になると金の鳥かごは空っぽで、ミルクグラス邸の全員が下手な嘘をついていた。", objective: "屋敷が目を覚ます前に最初の足跡を見つけよう。" },
+      { kicker: "書斎に走る稲妻", title: "バーナビー登場。", copy: "青い目。クリーム色の毛。灰色のマスク。大げさすぎるトレンチコート。バーナビーは許可を求めない。重力に挑む。", objective: "動いて、跳んで、ひっかいて、部屋に告白させよう。" },
+      { kicker: "謎解きの相棒", title: "クレオは壁のまばたきを聞く。", copy: "バーナビーは人間が隠すものを嗅ぐ。クレオは木が覚えているものを聞く。手がかりが違う言葉を話し始めたら交代しよう。", objective: "感知とひげの力で事件を解決しよう。", cta: "プレイ" },
+    ],
+  };
+
+  function localizedIntroScenes() {
+    return INTRO_SCENES_LOCALIZED[language] || INTRO_SCENES;
+  }
+
   const STORY_BEATS = {
     trail: [
       {
@@ -2205,7 +2242,7 @@
 
   startButton.addEventListener("click", () => {
     startPanel.classList.add("hidden");
-    beginCutscene(INTRO_SCENES, resetGame);
+    beginCutscene(localizedIntroScenes(), resetGame);
   });
   onlineButton.addEventListener("click", () => {
     onlineLobby.classList.toggle("hidden");
@@ -2242,7 +2279,7 @@
     } else if (gameMode === "multi") {
       resetMultiplayer();
     } else {
-      beginCutscene(INTRO_SCENES, resetGame);
+      beginCutscene(localizedIntroScenes(), resetGame);
     }
   });
   nextCutsceneButton.addEventListener("click", advanceCutscene);
