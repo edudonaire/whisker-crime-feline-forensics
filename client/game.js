@@ -2010,10 +2010,81 @@
   function loop(time) {
     const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);
     lastTime = time;
+    pollGamepad();
     update(dt);
     draw();
     drawPortrait();
     requestAnimationFrame(loop);
+  }
+
+  const gamepadButtons = { jump: false, swat: false, sense: false };
+
+  function setHeldKey(key, pressed) {
+    if (pressed) keys.add(key);
+    else keys.delete(key);
+  }
+
+  function pollGamepad() {
+    const pad = (navigator.getGamepads?.() || []).find(Boolean);
+    if (!pad) return;
+    const axis = pad.axes?.[0] || 0;
+    const left = axis < -0.25 || Boolean(pad.buttons?.[14]?.pressed);
+    const right = axis > 0.25 || Boolean(pad.buttons?.[15]?.pressed);
+    if (online.enabled) {
+      online.input.left = left;
+      online.input.right = right;
+    } else if (started && !ended && !cutsceneActive) {
+      if (gameMode === "multi") {
+        setHeldKey("a", left);
+        setHeldKey("d", right);
+      } else {
+        setHeldKey("ArrowLeft", left);
+        setHeldKey("ArrowRight", right);
+      }
+    }
+    if (!started || ended || cutsceneActive) {
+      gamepadButtons.jump = false;
+      gamepadButtons.swat = false;
+      gamepadButtons.sense = false;
+      return;
+    }
+    const jumpPressed = Boolean(pad.buttons?.[0]?.pressed);
+    const swatPressed = Boolean(pad.buttons?.[2]?.pressed);
+    const sensePressed = Boolean(pad.buttons?.[3]?.pressed);
+    if (jumpPressed && !gamepadButtons.jump) online.enabled ? queueOnlineAction("jump") : gameMode === "multi" ? jump() : jump();
+    if (swatPressed && !gamepadButtons.swat) online.enabled ? queueOnlineAction("swat") : swat();
+    if (sensePressed && !gamepadButtons.sense) online.enabled ? queueOnlineAction("sense") : toggleSense();
+    gamepadButtons.jump = jumpPressed;
+    gamepadButtons.swat = swatPressed;
+    gamepadButtons.sense = sensePressed;
+  }
+
+  function bindMouseControls() {
+    let heldDirection = "";
+    const release = () => {
+      if (heldDirection) keys.delete(heldDirection);
+      heldDirection = "";
+    };
+    canvas.addEventListener("pointerdown", (event) => {
+      if (event.button === 2) {
+        event.preventDefault();
+        online.enabled ? queueOnlineAction("jump") : jump();
+        return;
+      }
+      if (event.button !== 0 || cutsceneActive) return;
+      const bounds = canvas.getBoundingClientRect();
+      heldDirection = event.clientX - bounds.left < bounds.width / 2 ? "ArrowLeft" : "ArrowRight";
+      keys.add(heldDirection);
+      canvas.setPointerCapture?.(event.pointerId);
+    });
+    canvas.addEventListener("pointerup", release);
+    canvas.addEventListener("pointercancel", release);
+    canvas.addEventListener("pointerleave", release);
+    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+    canvas.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      online.enabled ? queueOnlineAction("swat") : swat();
+    });
   }
 
   function refreshOnlineInput() {
@@ -2091,6 +2162,8 @@
     button.addEventListener("pointercancel", up);
     button.addEventListener("pointerleave", up);
   });
+
+  bindMouseControls();
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
