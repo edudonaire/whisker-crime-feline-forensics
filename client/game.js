@@ -113,6 +113,17 @@
     document.getElementById("episodeChip").textContent = current.episode;
     document.getElementById("startTitle").textContent = current.startTitle;
     document.getElementById("startCopy").textContent = current.startCopy;
+    const subtitles = {
+      en: "The Case of the Vanishing Canary",
+      es: "El caso del canario desaparecido",
+      "pt-BR": "O caso do canario desaparecido",
+      fr: "L'affaire du canari disparu",
+      de: "Der Fall des verschwundenen Kanarienvogels",
+      it: "Il caso del canarino scomparso",
+      ja: "消えたカナリア事件",
+    };
+    document.getElementById("brandSubtitle").textContent = subtitles[language] || subtitles.en;
+    document.title = `Whisker & Crime: ${subtitles[language] || subtitles.en}`;
     document.getElementById("detectiveLabel").textContent = current.detective;
     document.getElementById("roomCodeLabel").textContent = current.room;
     document.getElementById("leadDetectiveLabel").textContent = current.lead;
