@@ -26,8 +26,22 @@
               <p>The Case of the Vanishing Canary</p>
             </div>
           </div>
-          <div class="case-clock" aria-live="polite">
-            <span id="clock">04:00</span>
+          <div class="topbar-tools">
+            <label class="language-picker">
+              <span id="languageLabel">Language</span>
+              <select id="languageSelect" aria-label="Language">
+                <option value="en">English</option>
+                <option value="es">Espanol</option>
+                <option value="pt-BR">Portugues (Brasil)</option>
+                <option value="fr">Francais</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="ja">日本語</option>
+              </select>
+            </label>
+            <div class="case-clock" aria-live="polite">
+              <span id="clock">04:00</span>
+            </div>
           </div>
         </div>
 
@@ -42,9 +56,9 @@
             ></canvas>
 
             <div class="start-panel" id="startPanel">
-              <div class="noir-chip">Episode 01 · Storm over Milkglass Manor</div>
-              <h2>The bird knew too much.</h2>
-              <p>
+              <div class="noir-chip" id="episodeChip">Episode 01 · Storm over Milkglass Manor</div>
+              <h2 id="startTitle">The bird knew too much.</h2>
+              <p id="startCopy">
                 Sir Reginald sang one forbidden name, then vanished before dawn.
                 Create a live room, share the code, and solve a synchronized
                 whodunit from any phone or laptop.
@@ -62,11 +76,11 @@
               </div>
               <div class="online-lobby hidden" id="onlineLobby" aria-label="Online room setup">
                 <label>
-                  Detective name
+                  <span id="detectiveLabel">Detective name</span>
                   <input id="playerNameInput" maxlength="18" autocomplete="nickname" placeholder="Barnaby fan" />
                 </label>
                 <label>
-                  Room code
+                  <span id="roomCodeLabel">Room code</span>
                   <input id="roomCodeInput" maxlength="6" autocomplete="off" placeholder="ABC123" />
                 </label>
                 <div class="mode-actions">
@@ -115,9 +129,9 @@
             <div class="cat-card">
               <canvas id="portrait" width="96" height="96" aria-hidden="true"></canvas>
               <div>
-                <p class="eyebrow">Lead detective</p>
+                <p class="eyebrow" id="leadDetectiveLabel">Lead detective</p>
                 <h2>Barnaby</h2>
-                <p>
+                <p id="detectiveBio">
                   Blue eyes, cream fur, gray mask, tiny trench coat. Excellent at
                   finding evidence. Terrible at respecting heirlooms.
                 </p>
@@ -126,7 +140,7 @@
 
             <div class="meter-block">
               <div class="meter-label">
-                <span>Chaos</span>
+                  <span id="chaosLabel">Chaos</span>
                 <strong id="chaosText">0%</strong>
               </div>
               <div class="meter">
@@ -152,7 +166,7 @@
 
             <div class="whodunit-panel hidden" id="whodunitPanel">
               <div class="panel-title">
-                <span>Whodunit</span>
+                <span id="whodunitLabel">Whodunit</span>
                 <strong id="mysterySeed">Case A</strong>
               </div>
               <p id="whodunitStatus">
@@ -164,7 +178,7 @@
 
             <div class="online-panel hidden" id="onlinePanel">
               <div class="panel-title">
-                <span>Online room</span>
+                <span id="onlineRoomLabel">Online room</span>
                 <strong id="onlineRoomCode">------</strong>
               </div>
               <p id="onlineStatus">Not connected.</p>
@@ -178,10 +192,10 @@
 
         <div class="controls">
           <div class="key-row">
-            <span>Online <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
-            <span>P1 <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
-            <span>P2 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>K</kbd><kbd>L</kbd></span>
-            <span>Solo <kbd>Tab</kbd> switch</span>
+            <span id="onlineKeysLabel">Online <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
+            <span id="p1KeysLabel">P1 <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
+            <span id="p2KeysLabel">P2 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>K</kbd><kbd>L</kbd></span>
+            <span id="soloKeysLabel">Solo <kbd>Tab</kbd> switch</span>
           </div>
           <div class="touch-row" aria-label="Touch controls">
             <button data-hold="left" type="button" aria-label="Move left">◀</button>

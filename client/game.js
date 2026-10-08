@@ -43,6 +43,87 @@
   const onlineStatus = document.getElementById("onlineStatus");
   const onlinePlayers = document.getElementById("onlinePlayers");
   const copyInviteButton = document.getElementById("copyInviteButton");
+  const languageSelect = document.getElementById("languageSelect");
+  const languageLabel = document.getElementById("languageLabel");
+
+  const LANGUAGES = {
+    en: {
+      name: "Language", online: "Online Whodunit", story: "Story Case", local: "Local Co-op",
+      detective: "Detective name", room: "Room code", create: "Create Room", join: "Join Code",
+      invite: "Copy Invite Link", lead: "Lead detective", chaos: "Chaos", whodunit: "Whodunit",
+      onlineRoom: "Online room", next: "Next", skip: "Skip", replay: "Replay Case", jump: "Jump", paw: "Paw", sense: "Sense", cat: "Cat", solo: "Solo switch", language: "Language",
+      episode: "Episode 01 · Storm over Milkglass Manor", startTitle: "The bird knew too much.",
+      startCopy: "Sir Reginald sang one forbidden name, then vanished before dawn. Create a live room, share the code, and solve a synchronized whodunit from any phone or laptop.",
+      lobby: "First two players control Barnaby and Cleo. Extra players join the clue board and accusation vote.",
+      bio: "Blue eyes, cream fur, gray mask, tiny trench coat. Excellent at finding evidence. Terrible at respecting heirlooms.",
+      labels: { trail: "Find the canary trail", floor: "Expose the floorboard compartment", note: "Read the hidden note", scent: "Identify the peanut-butter scent", buster: "Crack Buster's story" },
+    },
+    es: {
+      name: "Idioma", online: "Misterio en linea", story: "Caso de historia", local: "Cooperativo local", detective: "Nombre del detective", room: "Codigo de sala", create: "Crear sala", join: "Unirse con codigo", invite: "Copiar enlace", lead: "Detective principal", chaos: "Caos", whodunit: "Quien lo hizo", onlineRoom: "Sala en linea", next: "Siguiente", skip: "Saltar", replay: "Repetir caso", jump: "Saltar", paw: "Zarpa", sense: "Olfato", cat: "Gato", solo: "Cambiar en solitario", language: "Idioma", episode: "Episodio 01 · Tormenta sobre Milkglass Manor", startTitle: "El pajaro sabia demasiado.", startCopy: "Sir Reginald canto un nombre prohibido y desaparecio antes del amanecer. Crea una sala, comparte el codigo y resuelve el misterio desde cualquier telefono u ordenador.", lobby: "Los dos primeros jugadores controlan a Barnaby y Cleo. Los demas se unen al tablero de pistas y la votacion.", bio: "Ojos azules, pelaje crema, mascara gris y una gabardina diminuta. Excelente encontrando pruebas. Pesimo respetando reliquias.", labels: { trail: "Encuentra el rastro del canario", floor: "Revela el compartimento del suelo", note: "Lee la nota oculta", scent: "Identifica el olor a crema de cacahuete", buster: "Descubre la historia de Buster" },
+    },
+    "pt-BR": {
+      name: "Idioma", online: "Misterio online", story: "Caso da historia", local: "Co-op local", detective: "Nome do detetive", room: "Codigo da sala", create: "Criar sala", join: "Entrar com codigo", invite: "Copiar convite", lead: "Detetive principal", chaos: "Caos", whodunit: "Quem fez isso", onlineRoom: "Sala online", next: "Proximo", skip: "Pular", replay: "Jogar de novo", jump: "Pular", paw: "Pata", sense: "Sentido", cat: "Gato", solo: "Trocar no solo", language: "Idioma", episode: "Episodio 01 · Tempestade na Mansao Milkglass", startTitle: "O passaro sabia demais.", startCopy: "Sir Reginald cantou um nome proibido e sumiu antes do amanhecer. Crie uma sala, compartilhe o codigo e resolva o misterio sincronizado de qualquer celular ou notebook.", lobby: "Os dois primeiros jogadores controlam Barnaby e Cleo. Os demais entram no quadro de pistas e na votacao.", bio: "Olhos azuis, pelo creme, mascara cinza e um sobretudo minusculo. Otimo para achar provas. Terrivel com herancas.", labels: { trail: "Encontre a trilha do canario", floor: "Revele o compartimento do assoalho", note: "Leia a nota escondida", scent: "Identifique o cheiro de pasta de amendoim", buster: "Desvende a historia de Buster" },
+    },
+    fr: {
+      name: "Langue", online: "Mystere en ligne", story: "Affaire solo", local: "Co-op local", detective: "Nom du detective", room: "Code de salle", create: "Creer une salle", join: "Rejoindre", invite: "Copier le lien", lead: "Detective principal", chaos: "Chaos", whodunit: "Coupable", onlineRoom: "Salle en ligne", next: "Suivant", skip: "Passer", replay: "Rejouer", jump: "Sauter", paw: "Patte", sense: "Sens", cat: "Chat", solo: "Changer de chat", language: "Langue", episode: "Episode 01 · Orage sur le manoir Milkglass", startTitle: "L'oiseau en savait trop.", startCopy: "Sir Reginald a chante un nom interdit, puis a disparu avant l'aube. Creez une salle, partagez le code et resolvez l'enquete depuis n'importe quel appareil.", lobby: "Les deux premiers joueurs controlent Barnaby et Cleo. Les autres rejoignent le tableau des indices et le vote.", bio: "Yeux bleus, fourrure creme, masque gris et petit trench. Excellent pour trouver des preuves. Terrible avec les antiquites.", labels: { trail: "Trouver la piste du canari", floor: "Reveler le compartiment du plancher", note: "Lire la note cachee", scent: "Identifier l'odeur de beurre de cacahuete", buster: "Percer le secret de Buster" },
+    },
+    de: {
+      name: "Sprache", online: "Online-Krimi", story: "Story-Fall", local: "Lokaler Koop", detective: "Name des Detektivs", room: "Raumcode", create: "Raum erstellen", join: "Code beitreten", invite: "Einladung kopieren", lead: "Chefdetektiv", chaos: "Chaos", whodunit: "Wer war es", onlineRoom: "Online-Raum", next: "Weiter", skip: "Uberspringen", replay: "Fall wiederholen", jump: "Springen", paw: "Pfote", sense: "Spur", cat: "Katze", solo: "Katze wechseln", language: "Sprache", episode: "Episode 01 · Sturm uber Milkglass Manor", startTitle: "Der Vogel wusste zu viel.", startCopy: "Sir Reginald sang einen verbotenen Namen und verschwand vor dem Morgengrauen. Erstellt einen Raum, teilt den Code und lost den synchronen Krimi auf jedem Gerat.", lobby: "Die ersten zwei Spieler steuern Barnaby und Cleo. Weitere Spieler helfen am Hinweisbrett und bei der Abstimmung.", bio: "Blaue Augen, cremefarbenes Fell, graue Maske, kleiner Trenchcoat. Findet Beweise hervorragend. Respektiert Erbstucke schlecht.", labels: { trail: "Die Kanarienvogelspur finden", floor: "Das Bodenfach aufdecken", note: "Die versteckte Notiz lesen", scent: "Den Erdnussbuttergeruch erkennen", buster: "Busters Geschichte knacken" },
+    },
+    it: {
+      name: "Lingua", online: "Mistero online", story: "Caso narrativo", local: "Co-op locale", detective: "Nome del detective", room: "Codice stanza", create: "Crea stanza", join: "Unisciti col codice", invite: "Copia invito", lead: "Detective capo", chaos: "Caos", whodunit: "Chi e stato", onlineRoom: "Stanza online", next: "Avanti", skip: "Salta", replay: "Rigioca il caso", jump: "Salto", paw: "Zampa", sense: "Fiuto", cat: "Gatto", solo: "Cambia gatto", language: "Lingua", episode: "Episodio 01 · Tempesta a Milkglass Manor", startTitle: "L'uccello ne sapeva troppo.", startCopy: "Sir Reginald ha cantato un nome proibito, poi e sparito prima dell'alba. Crea una stanza, condividi il codice e risolvi il mistero da qualsiasi dispositivo.", lobby: "I primi due giocatori controllano Barnaby e Cleo. Gli altri si uniscono alla bacheca degli indizi e al voto.", bio: "Occhi blu, pelo color crema, maschera grigia e piccolo impermeabile. Ottimo con le prove. Terribile con i cimeli.", labels: { trail: "Trova la pista del canarino", floor: "Scopri il vano nel pavimento", note: "Leggi la nota nascosta", scent: "Riconosci l'odore di burro d'arachidi", buster: "Smaschera la storia di Buster" },
+    },
+    ja: {
+      name: "言語", online: "オンライン推理", story: "ストーリー事件", local: "ローカル協力", detective: "探偵の名前", room: "ルームコード", create: "ルームを作成", join: "コードで参加", invite: "招待リンクをコピー", lead: "名探偵", chaos: "混乱", whodunit: "犯人は誰", onlineRoom: "オンラインルーム", next: "次へ", skip: "スキップ", replay: "事件を再捜査", jump: "ジャンプ", paw: "ひっかく", sense: "感知", cat: "猫を交代", solo: "ソロ交代", language: "言語", episode: "エピソード01 · ミルクグラス邸の嵐", startTitle: "鳥は知りすぎていた。", startCopy: "サー・レジナルドは禁じられた名前を歌い、夜明け前に消えた。ルームを作り、コードを共有して、どの端末からでも同期した謎を解こう。", lobby: "最初の2人はバーナビーとクレオを操作します。追加のプレイヤーは手がかりボードと投票に参加します。", bio: "青い目、クリーム色の毛、灰色のマスク、小さなトレンチコート。証拠探しは得意。家宝の扱いは苦手。", labels: { trail: "カナリアの足跡を探す", floor: "床板の隠し部屋を暴く", note: "隠しメモを読む", scent: "ピーナッツバターの匂いを特定", buster: "バスターの話を崩す" },
+    },
+  };
+
+  let language = localStorage.getItem("whiskerLanguage") || "en";
+  const locale = () => LANGUAGES[language] || LANGUAGES.en;
+  const tr = (key) => locale()[key] || LANGUAGES.en[key] || key;
+
+  function applyLanguage() {
+    const current = locale();
+    document.documentElement.lang = language;
+    languageSelect.value = language;
+    languageLabel.textContent = current.language;
+    languageSelect.setAttribute("aria-label", current.language);
+    const text = {
+      onlineButton, startButton, multiplayerButton, createRoomButton, joinRoomButton,
+      copyInviteButton, restartButton, nextCutsceneButton, skipCutsceneButton,
+      languageLabel,
+    };
+    text.onlineButton.textContent = current.online;
+    text.startButton.textContent = current.story;
+    text.multiplayerButton.textContent = current.local;
+    text.createRoomButton.textContent = current.create;
+    text.joinRoomButton.textContent = current.join;
+    text.copyInviteButton.textContent = current.invite;
+    text.restartButton.textContent = current.replay;
+    text.nextCutsceneButton.textContent = current.next;
+    text.skipCutsceneButton.textContent = current.skip;
+    document.getElementById("episodeChip").textContent = current.episode;
+    document.getElementById("startTitle").textContent = current.startTitle;
+    document.getElementById("startCopy").textContent = current.startCopy;
+    document.getElementById("detectiveLabel").textContent = current.detective;
+    document.getElementById("roomCodeLabel").textContent = current.room;
+    document.getElementById("leadDetectiveLabel").textContent = current.lead;
+    document.getElementById("detectiveBio").textContent = current.bio;
+    document.getElementById("chaosLabel").textContent = current.chaos;
+    document.getElementById("whodunitLabel").textContent = current.whodunit;
+    document.getElementById("onlineRoomLabel").textContent = current.onlineRoom;
+    document.getElementById("onlineKeysLabel").firstChild.textContent = `${current.online} `;
+    document.getElementById("p1KeysLabel").firstChild.textContent = "P1 ";
+    document.getElementById("p2KeysLabel").firstChild.textContent = "P2 ";
+    document.getElementById("soloKeysLabel").firstChild.textContent = `${current.solo} `;
+    document.querySelector('[data-action="jump"]').textContent = current.jump;
+    document.querySelector('[data-action="swat"]').textContent = current.paw;
+    document.querySelector('[data-action="sense"]').textContent = current.sense;
+    document.querySelector('[data-action="switch"]').textContent = current.cat;
+    document.getElementById("lobbyStatus").textContent = current.lobby;
+    setEvidenceLabels(current.labels);
+    updateHud();
+  }
 
   const W = 320;
   const H = 180;
@@ -1986,6 +2067,11 @@
   });
   nextCutsceneButton.addEventListener("click", advanceCutscene);
   skipCutsceneButton.addEventListener("click", endCutscene);
+  languageSelect.addEventListener("change", () => {
+    language = languageSelect.value;
+    localStorage.setItem("whiskerLanguage", language);
+    applyLanguage();
+  });
 
   resetObjects();
   playerNameInput.value = localStorage.getItem("whiskerDetectiveName") || "";
@@ -1996,6 +2082,7 @@
     setLobbyStatus(`Room ${roomFromUrl} is ready. Add your name and join.`);
   }
   drawPortrait();
+  applyLanguage();
   updateHud();
   requestAnimationFrame(loop);
 })();
