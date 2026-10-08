@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Whisker & Crime: Feline Forensics</title>
+    <meta
+      name="description"
+      content="A pixel detective game starring Barnaby, the blue-eyed cat detective, in The Case of the Vanishing Canary."
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23131219'/%3E%3Cpath d='M14 29 23 12l9 13 9-13 9 17v18H14z' fill='%23f2ead9'/%3E%3Cpath d='M25 21h14v18H25z' fill='%23716961'/%3E%3Crect x='22' y='31' width='8' height='8' fill='%235aa9df'/%3E%3Crect x='34' y='31' width='8' height='8' fill='%235aa9df'/%3E%3Crect x='29' y='42' width='6' height='5' fill='%23df9a9a'/%3E%3Cpath d='M18 50h28v7H18z' fill='%23b38145'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="shell" aria-label="Whisker and Crime game">
+      <section class="stage-card">
+        <div class="topbar">
+          <div class="brand">
+            <span class="mark" aria-hidden="true"></span>
+            <div>
+              <h1>Whisker & Crime</h1>
+              <p>The Case of the Vanishing Canary</p>
+            </div>
+          </div>
+          <div class="case-clock" aria-live="polite">
+            <span id="clock">04:00</span>
+          </div>
+        </div>
+
+        <div class="game-layout">
+          <div class="screen-wrap">
+            <canvas
+              id="game"
+              width="320"
+              height="180"
+              aria-label="Pixel game canvas"
+              role="img"
+            ></canvas>
+
+            <div class="start-panel" id="startPanel">
+              <div class="noir-chip">1928 · Rain on stained glass</div>
+              <h2>Nothing is an accident.</h2>
+              <p>
+                Play Barnaby, the fluffy blue-eyed forensic menace. Swat the room
+                apart carefully, reveal the hidden evidence, and keep the chaos
+                under control before the humans return.
+              </p>
+              <button id="startButton" class="primary-button" type="button">
+                Start Case
+              </button>
+            </div>
+
+            <div class="end-panel hidden" id="endPanel" aria-live="assertive">
+              <div class="noir-chip" id="endChip">Case closed</div>
+              <h2 id="endTitle">Sir Reginald is saved.</h2>
+              <p id="endCopy"></p>
+              <button id="restartButton" class="primary-button" type="button">
+                Replay Case
+              </button>
+            </div>
+          </div>
+
+          <aside class="casefile" aria-label="Case file">
+            <div class="cat-card">
+              <canvas id="portrait" width="96" height="96" aria-hidden="true"></canvas>
+              <div>
+                <p class="eyebrow">Lead detective</p>
+                <h2>Barnaby</h2>
+                <p>
+                  Blue eyes, cream fur, gray mask, tiny trench coat. Excellent at
+                  finding evidence. Terrible at respecting heirlooms.
+                </p>
+              </div>
+            </div>
+
+            <div class="meter-block">
+              <div class="meter-label">
+                <span>Chaos</span>
+                <strong id="chaosText">0%</strong>
+              </div>
+              <div class="meter">
+                <span id="chaosBar"></span>
+              </div>
+            </div>
+
+            <div class="sense-panel">
+              <div class="active-detective" id="detectiveName">Barnaby · Scent</div>
+              <p id="senseCopy">
+                Scent sight makes chemical trails glow. Use it near suspicious
+                evidence.
+              </p>
+            </div>
+
+            <ol class="evidence-list" id="evidenceList">
+              <li data-key="trail">Find the canary trail</li>
+              <li data-key="floor">Expose the floorboard compartment</li>
+              <li data-key="note">Read the hidden note</li>
+              <li data-key="scent">Identify the peanut-butter scent</li>
+              <li data-key="buster">Crack Buster's story</li>
+            </ol>
+          </aside>
+        </div>
+
+        <div class="controls">
+          <div class="key-row">
+            <span><kbd>A</kbd><kbd>D</kbd> move</span>
+            <span><kbd>W</kbd>/<kbd>Space</kbd> jump</span>
+            <span><kbd>F</kbd> swat</span>
+            <span><kbd>E</kbd> sense</span>
+            <span><kbd>Tab</kbd> switch</span>
+          </div>
+          <div class="touch-row" aria-label="Touch controls">
+            <button data-hold="left" type="button" aria-label="Move left">◀</button>
+            <button data-hold="right" type="button" aria-label="Move right">▶</button>
+            <button data-action="jump" type="button">Jump</button>
+            <button data-action="swat" type="button">Paw</button>
+            <button data-action="sense" type="button">Sense</button>
+            <button data-action="switch" type="button">Cat</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
