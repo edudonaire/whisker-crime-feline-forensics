@@ -1992,7 +1992,9 @@
   }
 
   function drawPixelText(text, x, y, color, maxWidth = 120) {
-    ctx.font = "6px monospace";
+    ctx.font = "bold 7px monospace";
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
     ctx.fillStyle = color;
     const words = text.split(" ");
     let line = "";
