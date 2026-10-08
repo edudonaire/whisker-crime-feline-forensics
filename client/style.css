@@ -743,6 +743,18 @@ button:disabled {
   line-height: 1.4;
 }
 
+#onlineStatus[data-state="connected"] {
+  color: var(--green);
+}
+
+#onlineStatus[data-state="offline"] {
+  color: var(--red);
+}
+
+#onlineStatus[data-state="ended"] {
+  color: var(--amber);
+}
+
 .room-readiness {
   margin-top: 0.55rem;
   padding: 0.45rem 0.55rem;
@@ -942,6 +954,8 @@ kbd {
 @media (max-width: 560px) {
   .topbar-tools {
     align-items: flex-end;
+    width: 100%;
+    justify-content: space-between;
   }
 
   .language-picker {
@@ -950,6 +964,11 @@ kbd {
 
   .topbar {
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    width: 100%;
   }
 
   .case-clock {

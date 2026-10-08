@@ -117,6 +117,18 @@
     document.getElementById("roomCodeLabel").textContent = current.room;
     document.getElementById("leadDetectiveLabel").textContent = current.lead;
     document.getElementById("detectiveBio").textContent = current.bio;
+    const meta = {
+      en: ["1–8 players", "4–5 min case", "7 languages"],
+      es: ["1–8 jugadores", "Caso de 4–5 min", "7 idiomas"],
+      "pt-BR": ["1–8 jogadores", "Caso de 4–5 min", "7 idiomas"],
+      fr: ["1–8 joueurs", "Affaire de 4–5 min", "7 langues"],
+      de: ["1–8 Spieler", "4–5 Min. Fall", "7 Sprachen"],
+      it: ["1–8 giocatori", "Caso da 4–5 min", "7 lingue"],
+      ja: ["1–8人", "4–5分の事件", "7言語"],
+    }[language] || ["1–8 players", "4–5 min case", "7 languages"];
+    document.getElementById("playersMeta").textContent = meta[0];
+    document.getElementById("durationMeta").textContent = meta[1];
+    document.getElementById("languagesMeta").textContent = meta[2];
     document.getElementById("chaosLabel").textContent = current.chaos;
     document.getElementById("whodunitLabel").textContent = current.whodunit;
     document.getElementById("onlineRoomLabel").textContent = current.onlineRoom;
@@ -873,6 +885,7 @@
     url.searchParams.set("room", payload.roomCode);
     window.history.replaceState({}, "", url);
     applyOnlineSnapshot(payload.state, payload);
+    onlineStatus.dataset.state = "connected";
     if (online.pollTimer) clearInterval(online.pollTimer);
     online.pollTimer = setInterval(syncOnlineNow, 180);
     beginCutscene(
@@ -903,10 +916,12 @@
         input: online.input,
         actions,
       });
+      onlineStatus.dataset.state = "connected";
       applyOnlineSnapshot(payload.state, payload);
     } catch (error) {
       setLobbyStatus(error.message, "bad");
-      onlineStatus.textContent = `Sync interrupted: ${error.message}`;
+      onlineStatus.dataset.state = "offline";
+      onlineStatus.textContent = `Connection interrupted. Retrying automatically...`;
     } finally {
       online.syncing = false;
     }
@@ -967,6 +982,7 @@
       snapshot.status === "ended"
         ? "Case closed for everyone in the room."
         : `${role} · ${clueCount}/4 clues · screens syncing live`;
+    onlineStatus.dataset.state = snapshot.status === "ended" ? "ended" : "connected";
     roomReadiness.textContent = clueCount >= 4
       ? "Clue board ready. Compare motives and make one accusation together."
       : `${4 - clueCount} more clue${4 - clueCount === 1 ? "" : "s"} needed before the accusation board unlocks.`;
