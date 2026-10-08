@@ -200,6 +200,25 @@
   let cutsceneIndex = 0;
   let cutsceneDone = null;
   let currentMystery = null;
+  let audioContext = null;
+
+  function playTone(frequency, duration = 0.08, type = "square", volume = 0.025) {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    try {
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(volume, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    } catch {
+      audioContext = null;
+    }
+  }
 
   const online = {
     enabled: false,
@@ -1130,6 +1149,7 @@
         : text;
     setMessage(shownText, actor.x - 14, actor.y - 14, colors.green);
     showClueToast(shownText);
+    playTone(660, 0.12, "sine", 0.035);
     addParticles(actor.x + actor.w / 2, actor.y + 8, 18, colors.green, 2.3);
     pulse(actor.x + actor.w / 2, actor.y + 10, colors.green);
     if (gameMode === "multi") {
@@ -1198,6 +1218,7 @@
     if (actor.onGround) {
       actor.vy = -6.1;
       actor.onGround = false;
+      playTone(330, 0.07, "square", 0.018);
       addParticles(actor.x + actor.w / 2, actor.y + actor.h, 5, "#80604a", 1);
     }
   }
@@ -1216,6 +1237,7 @@
 
   function swatActor(actor) {
     state.swats += 1;
+    playTone(180, 0.055, "square", 0.018);
     const paw = {
       x: actor.facing > 0 ? actor.x + actor.w - 2 : actor.x - 16,
       y: actor.y + 6,
@@ -1504,6 +1526,7 @@
   function finish(won, chip, copy) {
     if (ended) return;
     ended = true;
+    playTone(won ? 880 : 150, won ? 0.28 : 0.2, won ? "sine" : "sawtooth", 0.035);
     endChip.textContent = chip;
     endTitle.textContent = won ? "Sir Reginald is saved." : "The trail goes cold.";
     endCopy.textContent = `${copy} Security cam recap: ${state.swats} swats, ${state.broken} broken objects, ${Math.round(state.chaos)}% chaos.`;
