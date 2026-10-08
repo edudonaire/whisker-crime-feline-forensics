@@ -6,7 +6,7 @@
     <title>Whisker & Crime: Feline Forensics</title>
     <meta
       name="description"
-      content="A dramatic pixel detective game starring Barnaby and Cleo, with noir cutscenes, local multiplayer whodunit mode, lightning, and The Case of the Vanishing Canary."
+      content="A dramatic pixel detective game starring Barnaby and Cleo, with online multiplayer rooms, noir cutscenes, lightning, and a synchronized whodunit case."
     />
     <link
       rel="icon"
@@ -46,16 +46,40 @@
               <h2>The bird knew too much.</h2>
               <p>
                 Sir Reginald sang one forbidden name, then vanished before dawn.
-                Play the cinematic solo case, or bring a second detective for a
-                randomized co-op whodunit where the culprit changes each run.
+                Create a live room, share the code, and solve a synchronized
+                whodunit from any phone or laptop.
               </p>
               <div class="mode-actions">
+                <button id="onlineButton" class="primary-button" type="button">
+                  Online Whodunit
+                </button>
                 <button id="startButton" class="primary-button" type="button">
                   Story Case
                 </button>
                 <button id="multiplayerButton" class="ghost-button" type="button">
-                  Co-op Whodunit
+                  Local Co-op
                 </button>
+              </div>
+              <div class="online-lobby hidden" id="onlineLobby" aria-label="Online room setup">
+                <label>
+                  Detective name
+                  <input id="playerNameInput" maxlength="18" autocomplete="nickname" placeholder="Barnaby fan" />
+                </label>
+                <label>
+                  Room code
+                  <input id="roomCodeInput" maxlength="6" autocomplete="off" placeholder="ABC123" />
+                </label>
+                <div class="mode-actions">
+                  <button id="createRoomButton" class="primary-button" type="button">
+                    Create Room
+                  </button>
+                  <button id="joinRoomButton" class="ghost-button" type="button">
+                    Join Code
+                  </button>
+                </div>
+                <p id="lobbyStatus" class="lobby-status" role="status">
+                  First two players control Barnaby and Cleo. Extra players join the clue board and accusation vote.
+                </p>
               </div>
             </div>
 
@@ -137,11 +161,24 @@
               <div class="suspect-grid" id="suspectGrid" aria-label="Suspects"></div>
               <div class="accuse-grid" id="accuseButtons" aria-label="Accuse suspect"></div>
             </div>
+
+            <div class="online-panel hidden" id="onlinePanel">
+              <div class="panel-title">
+                <span>Online room</span>
+                <strong id="onlineRoomCode">------</strong>
+              </div>
+              <p id="onlineStatus">Not connected.</p>
+              <div class="player-list" id="onlinePlayers" aria-label="Players in this room"></div>
+              <button id="copyInviteButton" class="ghost-button" type="button">
+                Copy Invite Link
+              </button>
+            </div>
           </aside>
         </div>
 
         <div class="controls">
           <div class="key-row">
+            <span>Online <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
             <span>P1 <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>
             <span>P2 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>K</kbd><kbd>L</kbd></span>
             <span>Solo <kbd>Tab</kbd> switch</span>

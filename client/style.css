@@ -361,6 +361,58 @@ h1 {
   gap: 0.7rem;
 }
 
+.online-lobby {
+  width: min(34rem, 100%);
+  display: grid;
+  grid-template-columns: 1fr 0.62fr;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(87, 183, 232, 0.28);
+  border-radius: 6px;
+  background: rgba(9, 8, 12, 0.68);
+}
+
+.online-lobby.hidden {
+  display: none;
+}
+
+.online-lobby label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--blue);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.online-lobby input {
+  width: 100%;
+  min-height: 2.65rem;
+  border: 1px solid rgba(244, 232, 210, 0.22);
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  color: var(--paper);
+  background: #0d0b10;
+  font: inherit;
+  font-size: 1rem;
+  text-transform: none;
+}
+
+.online-lobby input#roomCodeInput {
+  text-transform: uppercase;
+}
+
+.online-lobby .mode-actions,
+.lobby-status {
+  grid-column: 1 / -1;
+}
+
+.lobby-status {
+  color: #dbc6a7;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .primary-button {
   border: 0;
   border-radius: 6px;
@@ -392,7 +444,8 @@ h1 {
 .meter-block,
 .sense-panel,
 .evidence-list,
-.whodunit-panel {
+.whodunit-panel,
+.online-panel {
   border: 1px solid rgba(244, 232, 210, 0.13);
   border-radius: 6px;
   background: rgba(26, 21, 28, 0.88);
@@ -518,8 +571,56 @@ h1 {
   padding: 0.8rem;
 }
 
-.whodunit-panel.hidden {
+.whodunit-panel.hidden,
+.online-panel.hidden {
   display: none;
+}
+
+.online-panel {
+  padding: 0.8rem;
+  border-color: rgba(87, 183, 232, 0.22);
+}
+
+.online-panel p {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.player-list {
+  display: grid;
+  gap: 0.4rem;
+  margin-block: 0.65rem;
+}
+
+.player-pill {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px solid rgba(244, 232, 210, 0.13);
+  border-radius: 5px;
+  padding: 0.4rem 0.5rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--paper);
+  font-size: 0.76rem;
+}
+
+.player-pill strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-pill span {
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+
+.online-panel .ghost-button {
+  width: 100%;
 }
 
 .panel-title {
@@ -733,6 +834,10 @@ kbd {
 
   .mode-actions button {
     flex: 1 1 100%;
+  }
+
+  .online-lobby {
+    grid-template-columns: 1fr;
   }
 
   .suspect-grid {

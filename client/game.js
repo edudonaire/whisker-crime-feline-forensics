@@ -6,6 +6,13 @@
   const pctx = portrait.getContext("2d");
 
   const startPanel = document.getElementById("startPanel");
+  const onlineButton = document.getElementById("onlineButton");
+  const onlineLobby = document.getElementById("onlineLobby");
+  const playerNameInput = document.getElementById("playerNameInput");
+  const roomCodeInput = document.getElementById("roomCodeInput");
+  const createRoomButton = document.getElementById("createRoomButton");
+  const joinRoomButton = document.getElementById("joinRoomButton");
+  const lobbyStatus = document.getElementById("lobbyStatus");
   const startButton = document.getElementById("startButton");
   const multiplayerButton = document.getElementById("multiplayerButton");
   const endPanel = document.getElementById("endPanel");
@@ -31,6 +38,11 @@
   const whodunitStatus = document.getElementById("whodunitStatus");
   const suspectGrid = document.getElementById("suspectGrid");
   const accuseButtons = document.getElementById("accuseButtons");
+  const onlinePanel = document.getElementById("onlinePanel");
+  const onlineRoomCode = document.getElementById("onlineRoomCode");
+  const onlineStatus = document.getElementById("onlineStatus");
+  const onlinePlayers = document.getElementById("onlinePlayers");
+  const copyInviteButton = document.getElementById("copyInviteButton");
 
   const W = 320;
   const H = 180;
@@ -85,6 +97,22 @@
   let cutsceneIndex = 0;
   let cutsceneDone = null;
   let currentMystery = null;
+
+  const online = {
+    enabled: false,
+    roomCode: "",
+    playerId: "",
+    role: "",
+    slot: 0,
+    syncing: false,
+    pollTimer: null,
+    lastStateAt: 0,
+    input: {
+      left: false,
+      right: false,
+    },
+    pendingActions: [],
+  };
 
   const state = {
     time: 240,
@@ -372,7 +400,29 @@
     });
   }
 
+  function stopOnline(clearUrl = true) {
+    online.enabled = false;
+    online.roomCode = "";
+    online.playerId = "";
+    online.role = "";
+    online.slot = 0;
+    online.input.left = false;
+    online.input.right = false;
+    online.pendingActions.length = 0;
+    if (online.pollTimer) {
+      clearInterval(online.pollTimer);
+      online.pollTimer = null;
+    }
+    onlinePanel.classList.add("hidden");
+    if (clearUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("room");
+      window.history.replaceState({}, "", url);
+    }
+  }
+
   function resetGame() {
+    stopOnline();
     gameMode = "story";
     started = true;
     ended = false;
@@ -442,6 +492,7 @@
   }
 
   function resetMultiplayer() {
+    stopOnline();
     gameMode = "multi";
     started = true;
     ended = false;
@@ -623,7 +674,244 @@
     });
   }
 
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (match) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[match]);
+  }
+
+  function cleanRoomCode(value) {
+    return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  }
+
+  function getPlayerName() {
+    const name = playerNameInput.value.trim().slice(0, 18) || "Guest Detective";
+    localStorage.setItem("whiskerDetectiveName", name);
+    return name;
+  }
+
+  function setLobbyStatus(text, tone = "normal") {
+    lobbyStatus.textContent = text;
+    lobbyStatus.style.color = tone === "bad" ? colors.red : tone === "good" ? colors.green : "#dbc6a7";
+  }
+
+  async function api(path, body) {
+    const response = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "The room did not answer.");
+    }
+    return payload;
+  }
+
+  function inviteUrl(code = online.roomCode) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("room", code);
+    return url.toString();
+  }
+
+  function queueOnlineAction(action) {
+    if (!online.enabled || ended) return;
+    online.pendingActions.push(action);
+    syncOnlineNow();
+  }
+
+  async function createOnlineRoom() {
+    setLobbyStatus("Opening the manor doors...");
+    try {
+      const payload = await api("/api/rooms", { name: getPlayerName() });
+      beginOnlineSession(payload, true);
+      setLobbyStatus(`Room ${payload.roomCode} is live. Share the code.`, "good");
+    } catch (error) {
+      setLobbyStatus(error.message, "bad");
+    }
+  }
+
+  async function joinOnlineRoom() {
+    const code = cleanRoomCode(roomCodeInput.value);
+    if (!code) {
+      setLobbyStatus("Enter a room code or create a new room.", "bad");
+      return;
+    }
+    setLobbyStatus(`Looking for room ${code}...`);
+    try {
+      const payload = await api(`/api/rooms/${code}/join`, {
+        name: getPlayerName(),
+        playerId: sessionStorage.getItem(`whiskerPlayer:${code}`) || "",
+      });
+      beginOnlineSession(payload, false);
+      setLobbyStatus(`Joined ${payload.roomCode}.`, "good");
+    } catch (error) {
+      setLobbyStatus(error.message, "bad");
+    }
+  }
+
+  function beginOnlineSession(payload, created) {
+    online.enabled = true;
+    online.roomCode = payload.roomCode;
+    online.playerId = payload.playerId;
+    online.role = payload.role;
+    online.slot = payload.slot;
+    sessionStorage.setItem(`whiskerPlayer:${payload.roomCode}`, payload.playerId);
+    online.input.left = false;
+    online.input.right = false;
+    online.pendingActions.length = 0;
+    gameMode = "online";
+    started = true;
+    ended = false;
+    solved = false;
+    activeCat = payload.slot === 1 ? "cleo" : "barnaby";
+    senseOn = false;
+    resetObjects();
+    startPanel.classList.add("hidden");
+    endPanel.classList.add("hidden");
+    cutscene.classList.add("hidden");
+    screenWrap.classList.remove("cinematic");
+    whodunitPanel.classList.remove("hidden");
+    onlinePanel.classList.remove("hidden");
+    setEvidenceLabels(MULTI_LABELS);
+    const url = new URL(window.location.href);
+    url.searchParams.set("room", payload.roomCode);
+    window.history.replaceState({}, "", url);
+    applyOnlineSnapshot(payload.state, payload);
+    if (online.pollTimer) clearInterval(online.pollTimer);
+    online.pollTimer = setInterval(syncOnlineNow, 180);
+    beginCutscene(
+      [
+        {
+          kicker: created ? "Online room created" : "Online room joined",
+          title: created ? "The manor has a code." : "The storm lets you in.",
+          copy:
+            "Every detective sees the same room, clues, timer, suspects, and final accusation. Share the code and split the senses.",
+          objective:
+            online.slot < 2
+              ? `You are ${online.role}. Move with A/D, jump with W, swat with F, sense with E.`
+              : "You are on clue-board duty. Watch the evidence and help call the culprit.",
+          cta: "Start Sync",
+        },
+      ],
+      null
+    );
+  }
+
+  async function syncOnlineNow() {
+    if (!online.enabled || online.syncing || !online.roomCode || !online.playerId) return;
+    online.syncing = true;
+    const actions = online.pendingActions.splice(0);
+    try {
+      const payload = await api(`/api/rooms/${online.roomCode}/input`, {
+        playerId: online.playerId,
+        input: online.input,
+        actions,
+      });
+      applyOnlineSnapshot(payload.state, payload);
+    } catch (error) {
+      setLobbyStatus(error.message, "bad");
+      onlineStatus.textContent = `Sync interrupted: ${error.message}`;
+    } finally {
+      online.syncing = false;
+    }
+  }
+
+  function applyOnlineSnapshot(snapshot, payload = {}) {
+    if (!snapshot) return;
+    online.lastStateAt = Date.now();
+    if (payload.playerId) online.playerId = payload.playerId;
+    if (payload.role) online.role = payload.role;
+    if (Number.isInteger(payload.slot)) online.slot = payload.slot;
+    if (snapshot.code) online.roomCode = snapshot.code;
+    currentMystery = snapshot.mystery;
+    state.time = snapshot.time;
+    state.chaos = snapshot.chaos;
+    state.swats = snapshot.swats;
+    state.broken = snapshot.broken;
+    state.evidence = { ...snapshot.evidence };
+    state.message = snapshot.message;
+    const barnaby = snapshot.actors?.[0];
+    const cleo = snapshot.actors?.[1];
+    if (barnaby) Object.assign(player, barnaby);
+    if (cleo) Object.assign(player2, cleo);
+    barnabySense = Boolean(barnaby?.sense);
+    cleoSense = Boolean(cleo?.sense);
+    swatCooldown = barnaby?.cooldown || 0;
+    cleoSwatCooldown = cleo?.cooldown || 0;
+    Object.assign(curtain, snapshot.curtain || curtain);
+    if (Array.isArray(snapshot.objects)) {
+      objects.length = 0;
+      snapshot.objects.forEach((obj) => objects.push({ ...obj }));
+    }
+    ended = snapshot.status === "ended";
+    if (ended && snapshot.end) {
+      endChip.textContent = snapshot.end.chip;
+      endTitle.textContent = snapshot.end.title;
+      endCopy.textContent = snapshot.end.copy;
+      endPanel.classList.remove("hidden");
+    } else {
+      endPanel.classList.add("hidden");
+    }
+    renderWhodunit();
+    renderOnlinePanel(snapshot);
+    updateHud();
+  }
+
+  function renderOnlinePanel(snapshot) {
+    onlineRoomCode.textContent = online.roomCode || snapshot.code || "------";
+    const role = online.role || "Detective";
+    const clueCount = ["trail", "floor", "note", "scent"].filter((key) => state.evidence[key]).length;
+    onlineStatus.textContent =
+      snapshot.status === "ended"
+        ? "Case closed for everyone in the room."
+        : `${role} · ${clueCount}/4 clues · screens syncing live`;
+    onlinePlayers.innerHTML = (snapshot.players || [])
+      .map(
+        (p) =>
+          `<div class="player-pill"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.role)}${p.you ? " · you" : ""}</span></div>`
+      )
+      .join("");
+  }
+
+  async function accuseOnline(name) {
+    if (!online.enabled || ended) return;
+    try {
+      const payload = await api(`/api/rooms/${online.roomCode}/accuse`, {
+        playerId: online.playerId,
+        suspect: name,
+      });
+      applyOnlineSnapshot(payload.state, payload);
+      lightningFlash = 0.7;
+      sceneShake = Math.max(sceneShake, 3);
+    } catch (error) {
+      setLobbyStatus(error.message, "bad");
+    }
+  }
+
+  async function resetOnlineRoom() {
+    if (!online.enabled) return;
+    try {
+      const payload = await api(`/api/rooms/${online.roomCode}/reset`, {
+        playerId: online.playerId,
+      });
+      applyOnlineSnapshot(payload.state, payload);
+      endPanel.classList.add("hidden");
+      lightningFlash = 0.55;
+    } catch (error) {
+      setLobbyStatus(error.message, "bad");
+    }
+  }
+
   function accuse(name) {
+    if (online.enabled) {
+      accuseOnline(name);
+      return;
+    }
     if (ended || gameMode !== "multi" || !currentMystery) return;
     state.evidence.buster = true;
     renderWhodunit();
@@ -875,6 +1163,12 @@
   function update(dt) {
     updateStorm(dt);
     if (!started || ended || cutsceneActive) return;
+    if (online.enabled) {
+      sensePulse = Math.max(0, sensePulse - dt);
+      updateEffects(dt);
+      updateHud();
+      return;
+    }
     state.time -= dt;
     if (state.time <= 0) {
       finish(false, "The humans are home", "The owner stepped into the study before Barnaby could name the culprit. The canary remains a cold case.");
@@ -1090,10 +1384,14 @@
     clockEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     chaosText.textContent = `${Math.round(state.chaos)}%`;
     chaosBar.style.width = `${state.chaos}%`;
-    if (gameMode === "multi") {
-      detectiveName.textContent = `Co-op · B ${barnabySense ? "scent on" : "scent ready"} · C ${cleoSense ? "whiskers on" : "whiskers ready"}`;
+    if (gameMode === "multi" || online.enabled) {
+      detectiveName.textContent = online.enabled
+        ? `${online.role || "Online"} · B ${barnabySense ? "scent on" : "scent ready"} · C ${cleoSense ? "whiskers on" : "whiskers ready"}`
+        : `Co-op · B ${barnabySense ? "scent on" : "scent ready"} · C ${cleoSense ? "whiskers on" : "whiskers ready"}`;
       senseCopy.textContent =
-        "P1 Barnaby tracks smell with E. P2 Cleo reads notes and hollows with L. Accuse only after four clues.";
+        online.enabled
+          ? "Everyone shares the same clue board. Move your assigned cat, collect four clues, then accuse together."
+          : "P1 Barnaby tracks smell with E. P2 Cleo reads notes and hollows with L. Accuse only after four clues.";
     } else {
       detectiveName.textContent =
         activeCat === "barnaby"
@@ -1320,8 +1618,8 @@
   }
 
   function drawClues() {
-    if ((senseOn && activeCat === "barnaby") || state.evidence.trail) {
-      const glow = senseOn && activeCat === "barnaby" ? colors.green : "rgba(104, 212, 119, 0.7)";
+    if ((senseOn && activeCat === "barnaby") || barnabySense || state.evidence.trail) {
+      const glow = senseOn && activeCat === "barnaby" || barnabySense ? colors.green : "rgba(104, 212, 119, 0.7)";
       fill(165, 62, 4, 3, glow);
       fill(182, 58, 5, 3, glow);
       fill(199, 54, 4, 3, glow);
@@ -1332,7 +1630,7 @@
     if (state.evidence.floor) {
       fill(147, 139, 21, 3, colors.amber);
       fill(153, 134, 9, 5, "#d0bf90");
-      if (senseOn && activeCat === "cleo") {
+      if ((senseOn && activeCat === "cleo") || cleoSense) {
         ctx.strokeStyle = colors.amber;
         ctx.lineWidth = 1;
         for (let i = 0; i < 3; i++) {
@@ -1350,7 +1648,7 @@
   }
 
   function drawSenseLayer() {
-    if (gameMode === "multi") {
+    if (gameMode === "multi" || online.enabled) {
       if (barnabySense) {
         fill(0, 0, W, H, "rgba(22, 52, 78, 0.28)");
         for (let i = 0; i < 8; i++) {
@@ -1388,11 +1686,11 @@
   }
 
   function drawPlayer() {
-    if (gameMode === "multi") {
+    if (gameMode === "multi" || online.enabled) {
       drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0, player);
       drawCleo(player2.x, player2.y + 1, player2.facing, cleoSwatCooldown > 0, player2);
-      drawPlayerTag(player, "P1", colors.blue);
-      drawPlayerTag(player2, "P2", colors.amber);
+      drawPlayerTag(player, online.enabled ? "B" : "P1", colors.blue);
+      drawPlayerTag(player2, online.enabled ? "C" : "P2", colors.amber);
       return;
     }
     if (activeCat === "barnaby") {
@@ -1549,6 +1847,12 @@
     requestAnimationFrame(loop);
   }
 
+  function refreshOnlineInput() {
+    if (!online.enabled) return;
+    online.input.left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
+    online.input.right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
+  }
+
   document.addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "Tab"].includes(event.key)) {
       event.preventDefault();
@@ -1559,6 +1863,19 @@
       return;
     }
     keys.add(event.key);
+    if (online.enabled) {
+      refreshOnlineInput();
+      if (!event.repeat) {
+        if (event.key === " " || event.key === "w" || event.key === "W" || event.key === "ArrowUp") queueOnlineAction("jump");
+        if (event.key === "f" || event.key === "F" || event.key === "x" || event.key === "X" || event.key === "k" || event.key === "K") queueOnlineAction("swat");
+        if (event.key === "e" || event.key === "E" || event.key === "l" || event.key === "L") {
+          sensePulse = 0.5;
+          queueOnlineAction("sense");
+        }
+      }
+      syncOnlineNow();
+      return;
+    }
     if (gameMode === "multi") {
       if ((event.key === "w" || event.key === "W") && !event.repeat) jump();
       if (event.key === "ArrowUp" && !event.repeat) jumpCleo();
@@ -1576,6 +1893,10 @@
 
   document.addEventListener("keyup", (event) => {
     keys.delete(event.key);
+    if (online.enabled) {
+      refreshOnlineInput();
+      syncOnlineNow();
+    }
   });
 
   document.querySelectorAll("[data-hold]").forEach((button) => {
@@ -1583,10 +1904,18 @@
     const down = (event) => {
       event.preventDefault();
       keys.add(key);
+      if (online.enabled) {
+        refreshOnlineInput();
+        syncOnlineNow();
+      }
     };
     const up = (event) => {
       event.preventDefault();
       keys.delete(key);
+      if (online.enabled) {
+        refreshOnlineInput();
+        syncOnlineNow();
+      }
     };
     button.addEventListener("pointerdown", down);
     button.addEventListener("pointerup", up);
@@ -1597,6 +1926,15 @@
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
       const action = button.dataset.action;
+      if (online.enabled) {
+        if (action === "jump") queueOnlineAction("jump");
+        if (action === "swat") queueOnlineAction("swat");
+        if (action === "sense") {
+          sensePulse = 0.5;
+          queueOnlineAction("sense");
+        }
+        return;
+      }
       if (action === "jump") jump();
       if (action === "swat") swat();
       if (action === "sense") toggleSense();
@@ -1608,13 +1946,39 @@
     startPanel.classList.add("hidden");
     beginCutscene(INTRO_SCENES, resetGame);
   });
+  onlineButton.addEventListener("click", () => {
+    onlineLobby.classList.toggle("hidden");
+    roomCodeInput.value = cleanRoomCode(roomCodeInput.value);
+    if (!onlineLobby.classList.contains("hidden")) {
+      roomCodeInput.focus();
+    }
+  });
+  createRoomButton.addEventListener("click", createOnlineRoom);
+  joinRoomButton.addEventListener("click", joinOnlineRoom);
+  roomCodeInput.addEventListener("input", () => {
+    roomCodeInput.value = cleanRoomCode(roomCodeInput.value);
+  });
+  roomCodeInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") joinOnlineRoom();
+  });
+  copyInviteButton.addEventListener("click", async () => {
+    const link = inviteUrl();
+    try {
+      await navigator.clipboard.writeText(link);
+      onlineStatus.textContent = `Invite copied: ${online.roomCode}`;
+    } catch {
+      onlineStatus.textContent = link;
+    }
+  });
   multiplayerButton.addEventListener("click", () => {
     startPanel.classList.add("hidden");
     resetMultiplayer();
   });
   restartButton.addEventListener("click", () => {
     endPanel.classList.add("hidden");
-    if (gameMode === "multi") {
+    if (online.enabled) {
+      resetOnlineRoom();
+    } else if (gameMode === "multi") {
       resetMultiplayer();
     } else {
       beginCutscene(INTRO_SCENES, resetGame);
@@ -1624,6 +1988,13 @@
   skipCutsceneButton.addEventListener("click", endCutscene);
 
   resetObjects();
+  playerNameInput.value = localStorage.getItem("whiskerDetectiveName") || "";
+  const roomFromUrl = cleanRoomCode(new URLSearchParams(window.location.search).get("room"));
+  if (roomFromUrl) {
+    roomCodeInput.value = roomFromUrl;
+    onlineLobby.classList.remove("hidden");
+    setLobbyStatus(`Room ${roomFromUrl} is ready. Add your name and join.`);
+  }
   drawPortrait();
   updateHud();
   requestAnimationFrame(loop);

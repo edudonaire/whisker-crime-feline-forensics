@@ -1,0 +1,687 @@
+const ASSETS = {"html":"<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Whisker & Crime: Feline Forensics</title>\n    <meta\n      name=\"description\"\n      content=\"A dramatic pixel detective game starring Barnaby and Cleo, with online multiplayer rooms, noir cutscenes, lightning, and a synchronized whodunit case.\"\n    />\n    <link\n      rel=\"icon\"\n      type=\"image/svg+xml\"\n      href=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23131219'/%3E%3Cpath d='M14 29 23 12l9 13 9-13 9 17v18H14z' fill='%23f2ead9'/%3E%3Cpath d='M25 21h14v18H25z' fill='%23716961'/%3E%3Crect x='22' y='31' width='8' height='8' fill='%235aa9df'/%3E%3Crect x='34' y='31' width='8' height='8' fill='%235aa9df'/%3E%3Crect x='29' y='42' width='6' height='5' fill='%23df9a9a'/%3E%3Cpath d='M18 50h28v7H18z' fill='%23b38145'/%3E%3C/svg%3E\"\n    />\n    <link rel=\"stylesheet\" href=\"./style.css\" />\n  </head>\n  <body>\n    <main class=\"shell\" aria-label=\"Whisker and Crime game\">\n      <section class=\"stage-card\">\n        <div class=\"topbar\">\n          <div class=\"brand\">\n            <span class=\"mark\" aria-hidden=\"true\"></span>\n            <div>\n              <h1>Whisker & Crime</h1>\n              <p>The Case of the Vanishing Canary</p>\n            </div>\n          </div>\n          <div class=\"case-clock\" aria-live=\"polite\">\n            <span id=\"clock\">04:00</span>\n          </div>\n        </div>\n\n        <div class=\"game-layout\">\n          <div class=\"screen-wrap\">\n            <canvas\n              id=\"game\"\n              width=\"320\"\n              height=\"180\"\n              aria-label=\"Pixel game canvas\"\n              role=\"img\"\n            ></canvas>\n\n            <div class=\"start-panel\" id=\"startPanel\">\n              <div class=\"noir-chip\">Episode 01 · Storm over Milkglass Manor</div>\n              <h2>The bird knew too much.</h2>\n              <p>\n                Sir Reginald sang one forbidden name, then vanished before dawn.\n                Create a live room, share the code, and solve a synchronized\n                whodunit from any phone or laptop.\n              </p>\n              <div class=\"mode-actions\">\n                <button id=\"onlineButton\" class=\"primary-button\" type=\"button\">\n                  Online Whodunit\n                </button>\n                <button id=\"startButton\" class=\"primary-button\" type=\"button\">\n                  Story Case\n                </button>\n                <button id=\"multiplayerButton\" class=\"ghost-button\" type=\"button\">\n                  Local Co-op\n                </button>\n              </div>\n              <div class=\"online-lobby hidden\" id=\"onlineLobby\" aria-label=\"Online room setup\">\n                <label>\n                  Detective name\n                  <input id=\"playerNameInput\" maxlength=\"18\" autocomplete=\"nickname\" placeholder=\"Barnaby fan\" />\n                </label>\n                <label>\n                  Room code\n                  <input id=\"roomCodeInput\" maxlength=\"6\" autocomplete=\"off\" placeholder=\"ABC123\" />\n                </label>\n                <div class=\"mode-actions\">\n                  <button id=\"createRoomButton\" class=\"primary-button\" type=\"button\">\n                    Create Room\n                  </button>\n                  <button id=\"joinRoomButton\" class=\"ghost-button\" type=\"button\">\n                    Join Code\n                  </button>\n                </div>\n                <p id=\"lobbyStatus\" class=\"lobby-status\" role=\"status\">\n                  First two players control Barnaby and Cleo. Extra players join the clue board and accusation vote.\n                </p>\n              </div>\n            </div>\n\n            <div class=\"cutscene hidden\" id=\"cutscene\" aria-live=\"polite\">\n              <div class=\"lightning-scrim\" aria-hidden=\"true\"></div>\n              <div class=\"cutscene-card\">\n                <div class=\"cutscene-kicker\" id=\"cutsceneKicker\">Cold open</div>\n                <h2 id=\"cutsceneTitle\">The bird knew too much.</h2>\n                <p id=\"cutsceneCopy\"></p>\n                <div class=\"cutscene-objective\" id=\"cutsceneObjective\"></div>\n                <div class=\"cutscene-actions\">\n                  <button id=\"skipCutsceneButton\" class=\"ghost-button\" type=\"button\">\n                    Skip\n                  </button>\n                  <button id=\"nextCutsceneButton\" class=\"primary-button\" type=\"button\">\n                    Next\n                  </button>\n                </div>\n              </div>\n            </div>\n\n            <div class=\"end-panel hidden\" id=\"endPanel\" aria-live=\"assertive\">\n              <div class=\"noir-chip\" id=\"endChip\">Case closed</div>\n              <h2 id=\"endTitle\">Sir Reginald is saved.</h2>\n              <p id=\"endCopy\"></p>\n              <button id=\"restartButton\" class=\"primary-button\" type=\"button\">\n                Replay Case\n              </button>\n            </div>\n          </div>\n\n          <aside class=\"casefile\" aria-label=\"Case file\">\n            <div class=\"cat-card\">\n              <canvas id=\"portrait\" width=\"96\" height=\"96\" aria-hidden=\"true\"></canvas>\n              <div>\n                <p class=\"eyebrow\">Lead detective</p>\n                <h2>Barnaby</h2>\n                <p>\n                  Blue eyes, cream fur, gray mask, tiny trench coat. Excellent at\n                  finding evidence. Terrible at respecting heirlooms.\n                </p>\n              </div>\n            </div>\n\n            <div class=\"meter-block\">\n              <div class=\"meter-label\">\n                <span>Chaos</span>\n                <strong id=\"chaosText\">0%</strong>\n              </div>\n              <div class=\"meter\">\n                <span id=\"chaosBar\"></span>\n              </div>\n            </div>\n\n            <div class=\"sense-panel\">\n              <div class=\"active-detective\" id=\"detectiveName\">Barnaby · Scent</div>\n              <p id=\"senseCopy\">\n                Scent sight makes chemical trails glow. Use it near suspicious\n                evidence.\n              </p>\n            </div>\n\n            <ol class=\"evidence-list\" id=\"evidenceList\">\n              <li data-key=\"trail\">Find the canary trail</li>\n              <li data-key=\"floor\">Expose the floorboard compartment</li>\n              <li data-key=\"note\">Read the hidden note</li>\n              <li data-key=\"scent\">Identify the peanut-butter scent</li>\n              <li data-key=\"buster\">Crack Buster's story</li>\n            </ol>\n\n            <div class=\"whodunit-panel hidden\" id=\"whodunitPanel\">\n              <div class=\"panel-title\">\n                <span>Whodunit</span>\n                <strong id=\"mysterySeed\">Case A</strong>\n              </div>\n              <p id=\"whodunitStatus\">\n                Work together, collect at least four clues, then accuse a suspect.\n              </p>\n              <div class=\"suspect-grid\" id=\"suspectGrid\" aria-label=\"Suspects\"></div>\n              <div class=\"accuse-grid\" id=\"accuseButtons\" aria-label=\"Accuse suspect\"></div>\n            </div>\n\n            <div class=\"online-panel hidden\" id=\"onlinePanel\">\n              <div class=\"panel-title\">\n                <span>Online room</span>\n                <strong id=\"onlineRoomCode\">------</strong>\n              </div>\n              <p id=\"onlineStatus\">Not connected.</p>\n              <div class=\"player-list\" id=\"onlinePlayers\" aria-label=\"Players in this room\"></div>\n              <button id=\"copyInviteButton\" class=\"ghost-button\" type=\"button\">\n                Copy Invite Link\n              </button>\n            </div>\n          </aside>\n        </div>\n\n        <div class=\"controls\">\n          <div class=\"key-row\">\n            <span>Online <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>\n            <span>P1 <kbd>A</kbd><kbd>D</kbd><kbd>W</kbd><kbd>F</kbd><kbd>E</kbd></span>\n            <span>P2 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>K</kbd><kbd>L</kbd></span>\n            <span>Solo <kbd>Tab</kbd> switch</span>\n          </div>\n          <div class=\"touch-row\" aria-label=\"Touch controls\">\n            <button data-hold=\"left\" type=\"button\" aria-label=\"Move left\">◀</button>\n            <button data-hold=\"right\" type=\"button\" aria-label=\"Move right\">▶</button>\n            <button data-action=\"jump\" type=\"button\">Jump</button>\n            <button data-action=\"swat\" type=\"button\">Paw</button>\n            <button data-action=\"sense\" type=\"button\">Sense</button>\n            <button data-action=\"switch\" type=\"button\">Cat</button>\n          </div>\n        </div>\n      </section>\n    </main>\n\n    <script src=\"./game.js\"></script>\n  </body>\n</html>\n","css":":root {\n  color-scheme: dark;\n  --ink: #101016;\n  --panel: #1a151c;\n  --panel-2: #211b25;\n  --paper: #f4e8d2;\n  --muted: #bda98d;\n  --amber: #f1b14b;\n  --blue: #57b7e8;\n  --violet: #9c6de8;\n  --green: #73d080;\n  --red: #e05255;\n  --line: #413342;\n  --shadow: rgba(0, 0, 0, 0.38);\n}\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  margin: 0;\n  min-height: 100%;\n}\n\nbody {\n  background:\n    radial-gradient(circle at 16% 10%, rgba(87, 183, 232, 0.13), transparent 25rem),\n    radial-gradient(circle at 88% 8%, rgba(241, 177, 75, 0.12), transparent 20rem),\n    linear-gradient(135deg, #0c0c10 0%, #18121a 48%, #201622 100%);\n  color: var(--paper);\n  font-family:\n    ui-monospace, \"SFMono-Regular\", Menlo, Monaco, Consolas, \"Liberation Mono\",\n    monospace;\n  overflow-x: hidden;\n}\n\nbutton,\nkbd {\n  font: inherit;\n}\n\n.shell {\n  min-height: 100svh;\n  display: grid;\n  place-items: center;\n  padding: 1rem;\n}\n\n.stage-card {\n  width: min(1160px, 100%);\n  border: 1px solid rgba(244, 232, 210, 0.14);\n  border-radius: 8px;\n  background:\n    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 14rem),\n    rgba(15, 13, 18, 0.9);\n  box-shadow: 0 24px 80px var(--shadow);\n  overflow: hidden;\n}\n\n.topbar {\n  display: flex;\n  justify-content: space-between;\n  gap: 1rem;\n  align-items: center;\n  padding: 1rem;\n  border-bottom: 1px solid rgba(244, 232, 210, 0.12);\n}\n\n.brand {\n  display: flex;\n  gap: 0.8rem;\n  align-items: center;\n  min-width: 0;\n}\n\n.mark {\n  width: 2.3rem;\n  height: 2.3rem;\n  flex: 0 0 auto;\n  image-rendering: pixelated;\n  background:\n    linear-gradient(45deg, transparent 0 28%, #f4e8d2 28% 41%, transparent 41%),\n    linear-gradient(-45deg, transparent 0 28%, #f4e8d2 28% 41%, transparent 41%),\n    linear-gradient(#6f655d 0 0) 50% 42% / 43% 38% no-repeat,\n    radial-gradient(circle at 38% 52%, var(--blue) 0 9%, transparent 10%),\n    radial-gradient(circle at 62% 52%, var(--blue) 0 9%, transparent 10%),\n    linear-gradient(#f4e8d2 0 0) center / 78% 72% no-repeat;\n  border: 2px solid #0f0d12;\n  box-shadow: 0 0 0 2px rgba(244, 232, 210, 0.25);\n}\n\nh1,\nh2,\np {\n  margin: 0;\n}\n\nh1 {\n  font-size: clamp(1.1rem, 2.4vw, 1.9rem);\n  letter-spacing: 0;\n  line-height: 1.05;\n}\n\n.brand p {\n  color: var(--muted);\n  font-size: 0.86rem;\n  margin-top: 0.16rem;\n}\n\n.case-clock {\n  min-width: 5.2rem;\n  text-align: center;\n  border: 1px solid rgba(241, 177, 75, 0.35);\n  border-radius: 6px;\n  padding: 0.55rem 0.7rem;\n  color: var(--amber);\n  background: rgba(241, 177, 75, 0.08);\n  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);\n}\n\n.game-layout {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr) 320px;\n  gap: 1rem;\n  padding: 1rem;\n}\n\n.screen-wrap {\n  position: relative;\n  min-width: 0;\n  aspect-ratio: 16 / 9;\n  border: 1px solid rgba(244, 232, 210, 0.18);\n  border-radius: 6px;\n  background: #050507;\n  overflow: hidden;\n}\n\n.screen-wrap.cinematic {\n  aspect-ratio: auto;\n  min-height: min(62svh, 34rem);\n}\n\n#game {\n  width: 100%;\n  height: 100%;\n  display: block;\n  image-rendering: pixelated;\n  image-rendering: crisp-edges;\n  touch-action: none;\n}\n\n.start-panel,\n.end-panel,\n.cutscene {\n  position: absolute;\n  inset: 0;\n}\n\n.start-panel,\n.end-panel {\n  display: grid;\n  align-content: center;\n  justify-items: start;\n  gap: 0.85rem;\n  padding: clamp(1rem, 5vw, 3rem);\n  background:\n    linear-gradient(90deg, rgba(12, 10, 14, 0.92) 0%, rgba(12, 10, 14, 0.78) 55%, rgba(12, 10, 14, 0.28) 100%),\n    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.28));\n}\n\n.hidden {\n  display: none;\n}\n\n.cutscene {\n  display: grid;\n  place-items: center;\n  padding: clamp(0.8rem, 4vw, 2rem);\n  background:\n    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.8)),\n    radial-gradient(circle at 70% 16%, rgba(87, 183, 232, 0.18), transparent 16rem);\n  overflow: hidden;\n}\n\n.cutscene.hidden {\n  display: none;\n}\n\n.lightning-scrim {\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n}\n\n.lightning-scrim::before,\n.lightning-scrim::after {\n  content: \"\";\n  position: absolute;\n  opacity: 0;\n  pointer-events: none;\n}\n\n.lightning-scrim::before {\n  inset: 0;\n  background: rgba(217, 242, 255, 0.88);\n  animation: cutscene-flash 3.7s infinite;\n}\n\n.lightning-scrim::after {\n  width: 5rem;\n  height: 10rem;\n  left: 66%;\n  top: -1rem;\n  background:\n    linear-gradient(118deg, transparent 0 36%, #e9fbff 36% 42%, transparent 42% 100%),\n    linear-gradient(70deg, transparent 0 49%, #57b7e8 49% 54%, transparent 54% 100%);\n  image-rendering: pixelated;\n  filter: drop-shadow(0 0 12px rgba(87, 183, 232, 0.9));\n  animation: bolt-pop 3.7s infinite;\n}\n\n.cutscene-card {\n  position: relative;\n  z-index: 1;\n  width: min(44rem, 100%);\n  border: 1px solid rgba(244, 232, 210, 0.26);\n  border-radius: 6px;\n  padding: clamp(1rem, 4vw, 2rem);\n  background:\n    linear-gradient(180deg, rgba(24, 19, 29, 0.94), rgba(10, 8, 13, 0.94)),\n    repeating-linear-gradient(0deg, transparent 0 7px, rgba(255, 255, 255, 0.03) 7px 8px);\n  box-shadow:\n    0 18px 48px rgba(0, 0, 0, 0.55),\n    inset 0 0 0 1px rgba(87, 183, 232, 0.08);\n}\n\n.cutscene-kicker {\n  width: fit-content;\n  max-width: 100%;\n  color: var(--blue);\n  border-bottom: 1px solid rgba(87, 183, 232, 0.4);\n  padding-bottom: 0.25rem;\n  margin-bottom: 0.75rem;\n  font-size: 0.82rem;\n  text-transform: uppercase;\n}\n\n.cutscene-card h2 {\n  max-width: 14ch;\n  font-size: clamp(1.9rem, 5.6vw, 4.2rem);\n  line-height: 0.95;\n  text-shadow: 0 4px 0 #000;\n}\n\n.cutscene-card p {\n  margin-top: 0.9rem;\n  color: #eadac0;\n  font-size: clamp(1rem, 1.7vw, 1.18rem);\n  line-height: 1.55;\n}\n\n.cutscene-objective {\n  margin-top: 1rem;\n  border-left: 3px solid var(--amber);\n  padding: 0.45rem 0 0.45rem 0.75rem;\n  color: var(--amber);\n  font-weight: 800;\n}\n\n.cutscene-actions {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.65rem;\n  justify-content: flex-end;\n  margin-top: 1.2rem;\n}\n\n.ghost-button {\n  min-height: 2.8rem;\n  border: 1px solid rgba(244, 232, 210, 0.26);\n  border-radius: 6px;\n  padding: 0.7rem 1rem;\n  color: var(--paper);\n  background: rgba(255, 255, 255, 0.04);\n  cursor: pointer;\n}\n\n.ghost-button:hover {\n  background: rgba(255, 255, 255, 0.08);\n}\n\n@keyframes cutscene-flash {\n  0%,\n  10%,\n  100% {\n    opacity: 0;\n  }\n  11% {\n    opacity: 0.85;\n  }\n  13% {\n    opacity: 0.1;\n  }\n  15% {\n    opacity: 0.55;\n  }\n  19% {\n    opacity: 0;\n  }\n}\n\n@keyframes bolt-pop {\n  0%,\n  10%,\n  100% {\n    opacity: 0;\n    transform: translateY(-1rem);\n  }\n  11%,\n  16% {\n    opacity: 1;\n    transform: translateY(0);\n  }\n  18% {\n    opacity: 0;\n  }\n}\n\n.noir-chip {\n  width: fit-content;\n  max-width: 100%;\n  border: 1px solid rgba(87, 183, 232, 0.48);\n  color: var(--blue);\n  border-radius: 999px;\n  padding: 0.35rem 0.65rem;\n  background: rgba(87, 183, 232, 0.1);\n  font-size: 0.78rem;\n}\n\n.start-panel h2,\n.end-panel h2 {\n  max-width: 12ch;\n  font-size: clamp(2rem, 7vw, 4.8rem);\n  line-height: 0.95;\n  text-shadow: 0 4px 0 #000;\n}\n\n.start-panel p,\n.end-panel p {\n  max-width: 46rem;\n  color: #ddcdb4;\n  font-size: clamp(0.95rem, 1.6vw, 1.08rem);\n  line-height: 1.55;\n}\n\n.mode-actions {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.7rem;\n}\n\n.online-lobby {\n  width: min(34rem, 100%);\n  display: grid;\n  grid-template-columns: 1fr 0.62fr;\n  gap: 0.75rem;\n  margin-top: 0.2rem;\n  padding: 0.8rem;\n  border: 1px solid rgba(87, 183, 232, 0.28);\n  border-radius: 6px;\n  background: rgba(9, 8, 12, 0.68);\n}\n\n.online-lobby.hidden {\n  display: none;\n}\n\n.online-lobby label {\n  display: grid;\n  gap: 0.35rem;\n  color: var(--blue);\n  font-size: 0.78rem;\n  text-transform: uppercase;\n}\n\n.online-lobby input {\n  width: 100%;\n  min-height: 2.65rem;\n  border: 1px solid rgba(244, 232, 210, 0.22);\n  border-radius: 6px;\n  padding: 0.55rem 0.65rem;\n  color: var(--paper);\n  background: #0d0b10;\n  font: inherit;\n  font-size: 1rem;\n  text-transform: none;\n}\n\n.online-lobby input#roomCodeInput {\n  text-transform: uppercase;\n}\n\n.online-lobby .mode-actions,\n.lobby-status {\n  grid-column: 1 / -1;\n}\n\n.lobby-status {\n  color: #dbc6a7;\n  font-size: 0.82rem;\n  line-height: 1.45;\n}\n\n.primary-button {\n  border: 0;\n  border-radius: 6px;\n  background: var(--amber);\n  color: #1a1208;\n  min-height: 2.8rem;\n  padding: 0.7rem 1rem;\n  font-weight: 800;\n  cursor: pointer;\n  box-shadow: 0 4px 0 #8d5e21;\n}\n\n.primary-button:hover {\n  filter: brightness(1.08);\n}\n\n.primary-button:active {\n  transform: translateY(2px);\n  box-shadow: 0 2px 0 #8d5e21;\n}\n\n.casefile {\n  display: grid;\n  align-content: start;\n  gap: 0.9rem;\n}\n\n.cat-card,\n.meter-block,\n.sense-panel,\n.evidence-list,\n.whodunit-panel,\n.online-panel {\n  border: 1px solid rgba(244, 232, 210, 0.13);\n  border-radius: 6px;\n  background: rgba(26, 21, 28, 0.88);\n}\n\n.cat-card {\n  display: grid;\n  grid-template-columns: 96px 1fr;\n  gap: 0.85rem;\n  padding: 0.9rem;\n}\n\n#portrait {\n  width: 96px;\n  height: 96px;\n  image-rendering: pixelated;\n  border: 1px solid rgba(244, 232, 210, 0.18);\n  border-radius: 4px;\n  background: #0b0b0e;\n}\n\n.eyebrow {\n  color: var(--blue);\n  font-size: 0.74rem;\n  text-transform: uppercase;\n}\n\n.cat-card h2 {\n  margin-top: 0.15rem;\n  font-size: 1.15rem;\n}\n\n.cat-card p:last-child {\n  color: var(--muted);\n  font-size: 0.78rem;\n  line-height: 1.42;\n  margin-top: 0.35rem;\n}\n\n.meter-block,\n.sense-panel {\n  padding: 0.9rem;\n}\n\n.meter-label {\n  display: flex;\n  justify-content: space-between;\n  gap: 0.6rem;\n  margin-bottom: 0.5rem;\n  color: #e9d5b7;\n}\n\n.meter {\n  height: 0.75rem;\n  overflow: hidden;\n  border: 1px solid rgba(244, 232, 210, 0.2);\n  border-radius: 999px;\n  background: #0b0a0d;\n}\n\n.meter span {\n  display: block;\n  width: 0%;\n  height: 100%;\n  background: linear-gradient(90deg, var(--green), var(--amber), var(--red));\n  transition: width 0.2s ease;\n}\n\n.active-detective {\n  color: var(--amber);\n  font-weight: 800;\n  margin-bottom: 0.4rem;\n}\n\n.sense-panel p {\n  color: var(--muted);\n  font-size: 0.84rem;\n  line-height: 1.45;\n}\n\n.evidence-list {\n  list-style: none;\n  margin: 0;\n  padding: 0.55rem;\n  display: grid;\n  gap: 0.45rem;\n}\n\n.evidence-list li {\n  min-height: 2rem;\n  display: flex;\n  align-items: center;\n  gap: 0.55rem;\n  border-radius: 4px;\n  padding: 0.42rem 0.5rem;\n  color: #d2bea1;\n  background: rgba(255, 255, 255, 0.035);\n  font-size: 0.84rem;\n  line-height: 1.25;\n}\n\n.evidence-list li::before {\n  content: \"\";\n  width: 0.72rem;\n  height: 0.72rem;\n  flex: 0 0 auto;\n  border: 1px solid rgba(244, 232, 210, 0.32);\n  background: rgba(0, 0, 0, 0.22);\n}\n\n.evidence-list li.done {\n  color: var(--paper);\n  background: rgba(115, 208, 128, 0.11);\n}\n\n.evidence-list li.done::before {\n  background: var(--green);\n  border-color: var(--green);\n  box-shadow: 0 0 10px rgba(115, 208, 128, 0.45);\n}\n\n.whodunit-panel {\n  padding: 0.8rem;\n}\n\n.whodunit-panel.hidden,\n.online-panel.hidden {\n  display: none;\n}\n\n.online-panel {\n  padding: 0.8rem;\n  border-color: rgba(87, 183, 232, 0.22);\n}\n\n.online-panel p {\n  margin-top: 0.45rem;\n  color: var(--muted);\n  font-size: 0.78rem;\n  line-height: 1.4;\n}\n\n.player-list {\n  display: grid;\n  gap: 0.4rem;\n  margin-block: 0.65rem;\n}\n\n.player-pill {\n  display: flex;\n  justify-content: space-between;\n  gap: 0.5rem;\n  min-height: 2rem;\n  align-items: center;\n  border: 1px solid rgba(244, 232, 210, 0.13);\n  border-radius: 5px;\n  padding: 0.4rem 0.5rem;\n  background: rgba(255, 255, 255, 0.035);\n  color: var(--paper);\n  font-size: 0.76rem;\n}\n\n.player-pill strong {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.player-pill span {\n  color: var(--blue);\n  flex: 0 0 auto;\n}\n\n.online-panel .ghost-button {\n  width: 100%;\n}\n\n.panel-title {\n  display: flex;\n  justify-content: space-between;\n  gap: 0.75rem;\n  align-items: center;\n  color: var(--amber);\n  font-weight: 800;\n}\n\n.panel-title strong {\n  color: var(--blue);\n  font-size: 0.75rem;\n}\n\n.whodunit-panel p {\n  margin-top: 0.45rem;\n  color: var(--muted);\n  font-size: 0.78rem;\n  line-height: 1.4;\n}\n\n.suspect-grid,\n.accuse-grid {\n  display: grid;\n  gap: 0.45rem;\n  margin-top: 0.65rem;\n}\n\n.suspect-grid {\n  grid-template-columns: 1fr 1fr;\n}\n\n.suspect-card,\n.accuse-grid button {\n  border: 1px solid rgba(244, 232, 210, 0.16);\n  border-radius: 5px;\n  background: rgba(255, 255, 255, 0.035);\n  color: var(--paper);\n}\n\n.suspect-card {\n  min-height: 3.6rem;\n  padding: 0.45rem;\n}\n\n.suspect-card strong {\n  display: block;\n  color: #f1d195;\n  font-size: 0.78rem;\n  line-height: 1.2;\n}\n\n.suspect-card span {\n  display: block;\n  margin-top: 0.25rem;\n  color: var(--muted);\n  font-size: 0.68rem;\n  line-height: 1.22;\n}\n\n.accuse-grid button {\n  min-height: 2.3rem;\n  cursor: pointer;\n  font-size: 0.78rem;\n}\n\n.accuse-grid button:disabled {\n  cursor: not-allowed;\n  opacity: 0.42;\n}\n\n.accuse-grid button:not(:disabled):hover {\n  border-color: rgba(241, 177, 75, 0.55);\n  background: rgba(241, 177, 75, 0.11);\n}\n\n.controls {\n  border-top: 1px solid rgba(244, 232, 210, 0.12);\n  padding: 0.85rem 1rem 1rem;\n}\n\n.key-row,\n.touch-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.55rem;\n  align-items: center;\n}\n\n.key-row span {\n  color: var(--muted);\n  font-size: 0.84rem;\n}\n\nkbd {\n  display: inline-grid;\n  place-items: center;\n  min-width: 1.65rem;\n  min-height: 1.55rem;\n  margin-inline: 0.08rem;\n  padding: 0 0.3rem;\n  border: 1px solid rgba(244, 232, 210, 0.2);\n  border-bottom-color: rgba(244, 232, 210, 0.42);\n  border-radius: 4px;\n  background: #100e13;\n  color: var(--paper);\n  font-size: 0.78rem;\n}\n\n.touch-row {\n  display: none;\n  margin-top: 0.75rem;\n}\n\n.touch-row button {\n  min-height: 2.8rem;\n  min-width: 3.3rem;\n  border: 1px solid rgba(244, 232, 210, 0.2);\n  border-radius: 6px;\n  color: var(--paper);\n  background: #1f1924;\n}\n\n@media (max-width: 900px) {\n  .shell {\n    padding: 0;\n  }\n\n  .stage-card {\n    min-height: 100svh;\n    border-radius: 0;\n    border-inline: 0;\n  }\n\n  .game-layout {\n    grid-template-columns: 1fr;\n  }\n\n  .casefile {\n    grid-template-columns: 1fr 1fr;\n  }\n\n  .cat-card {\n    grid-column: 1 / -1;\n  }\n\n  .touch-row {\n    display: flex;\n  }\n}\n\n@media (max-width: 560px) {\n  .topbar {\n    align-items: flex-start;\n  }\n\n  .case-clock {\n    min-width: 4.6rem;\n  }\n\n  .game-layout {\n    padding: 0.65rem;\n    gap: 0.65rem;\n  }\n\n  .casefile {\n    grid-template-columns: 1fr;\n  }\n\n  .start-panel,\n  .end-panel,\n  .cutscene {\n    padding: 1rem;\n  }\n\n  .start-panel h2,\n  .end-panel h2,\n  .cutscene-card h2 {\n    font-size: clamp(1.8rem, 12vw, 3.2rem);\n  }\n\n  .screen-wrap.cinematic {\n    min-height: min(76svh, 34rem);\n  }\n\n  .cutscene-actions {\n    justify-content: stretch;\n  }\n\n  .cutscene-actions button {\n    flex: 1 1 40%;\n  }\n\n  .key-row {\n    display: none;\n  }\n\n  .touch-row {\n    margin-top: 0;\n  }\n\n  .touch-row button {\n    flex: 1 1 28%;\n  }\n\n  .mode-actions {\n    width: 100%;\n  }\n\n  .mode-actions button {\n    flex: 1 1 100%;\n  }\n\n  .online-lobby {\n    grid-template-columns: 1fr;\n  }\n\n  .suspect-grid {\n    grid-template-columns: 1fr;\n  }\n}\n","js":"(() => {\n  const canvas = document.getElementById(\"game\");\n  const ctx = canvas.getContext(\"2d\");\n  const screenWrap = canvas.closest(\".screen-wrap\");\n  const portrait = document.getElementById(\"portrait\");\n  const pctx = portrait.getContext(\"2d\");\n\n  const startPanel = document.getElementById(\"startPanel\");\n  const onlineButton = document.getElementById(\"onlineButton\");\n  const onlineLobby = document.getElementById(\"onlineLobby\");\n  const playerNameInput = document.getElementById(\"playerNameInput\");\n  const roomCodeInput = document.getElementById(\"roomCodeInput\");\n  const createRoomButton = document.getElementById(\"createRoomButton\");\n  const joinRoomButton = document.getElementById(\"joinRoomButton\");\n  const lobbyStatus = document.getElementById(\"lobbyStatus\");\n  const startButton = document.getElementById(\"startButton\");\n  const multiplayerButton = document.getElementById(\"multiplayerButton\");\n  const endPanel = document.getElementById(\"endPanel\");\n  const endChip = document.getElementById(\"endChip\");\n  const endTitle = document.getElementById(\"endTitle\");\n  const endCopy = document.getElementById(\"endCopy\");\n  const restartButton = document.getElementById(\"restartButton\");\n  const cutscene = document.getElementById(\"cutscene\");\n  const cutsceneKicker = document.getElementById(\"cutsceneKicker\");\n  const cutsceneTitle = document.getElementById(\"cutsceneTitle\");\n  const cutsceneCopy = document.getElementById(\"cutsceneCopy\");\n  const cutsceneObjective = document.getElementById(\"cutsceneObjective\");\n  const nextCutsceneButton = document.getElementById(\"nextCutsceneButton\");\n  const skipCutsceneButton = document.getElementById(\"skipCutsceneButton\");\n  const clockEl = document.getElementById(\"clock\");\n  const chaosText = document.getElementById(\"chaosText\");\n  const chaosBar = document.getElementById(\"chaosBar\");\n  const detectiveName = document.getElementById(\"detectiveName\");\n  const senseCopy = document.getElementById(\"senseCopy\");\n  const evidenceList = document.getElementById(\"evidenceList\");\n  const whodunitPanel = document.getElementById(\"whodunitPanel\");\n  const mysterySeed = document.getElementById(\"mysterySeed\");\n  const whodunitStatus = document.getElementById(\"whodunitStatus\");\n  const suspectGrid = document.getElementById(\"suspectGrid\");\n  const accuseButtons = document.getElementById(\"accuseButtons\");\n  const onlinePanel = document.getElementById(\"onlinePanel\");\n  const onlineRoomCode = document.getElementById(\"onlineRoomCode\");\n  const onlineStatus = document.getElementById(\"onlineStatus\");\n  const onlinePlayers = document.getElementById(\"onlinePlayers\");\n  const copyInviteButton = document.getElementById(\"copyInviteButton\");\n\n  const W = 320;\n  const H = 180;\n  const GROUND = 150;\n  const GRAVITY = 0.36;\n  const keys = new Set();\n  const pulses = [];\n  const particles = [];\n  const floaters = [];\n  const rain = Array.from({ length: 42 }, (_, i) => ({\n    x: (i * 37) % W,\n    y: (i * 17) % H,\n    s: 1 + ((i * 11) % 4),\n  }));\n\n  const colors = {\n    ink: \"#111018\",\n    wood: \"#4f2e26\",\n    woodDark: \"#2a1717\",\n    gold: \"#d8a13a\",\n    cream: \"#efe6d2\",\n    cream2: \"#d6c7ad\",\n    shadowFur: \"#8a8179\",\n    mask: \"#706861\",\n    maskDark: \"#4a4542\",\n    blue: \"#55aee3\",\n    amber: \"#f0ae48\",\n    violet: \"#9267e6\",\n    green: \"#68d477\",\n    red: \"#e04e56\",\n    paper: \"#f1e1c1\",\n  };\n\n  let lastTime = 0;\n  let gameMode = \"story\";\n  let started = false;\n  let ended = false;\n  let activeCat = \"barnaby\";\n  let senseOn = false;\n  let barnabySense = false;\n  let cleoSense = false;\n  let swatCooldown = 0;\n  let cleoSwatCooldown = 0;\n  let sensePulse = 0;\n  let sceneShake = 0;\n  let lightningFlash = 0;\n  let lightningTimer = 0.8;\n  let lightningFork = 0.5;\n  let solved = false;\n  let cutsceneActive = false;\n  let cutsceneQueue = [];\n  let cutsceneIndex = 0;\n  let cutsceneDone = null;\n  let currentMystery = null;\n\n  const online = {\n    enabled: false,\n    roomCode: \"\",\n    playerId: \"\",\n    role: \"\",\n    slot: 0,\n    syncing: false,\n    pollTimer: null,\n    lastStateAt: 0,\n    input: {\n      left: false,\n      right: false,\n    },\n    pendingActions: [],\n  };\n\n  const state = {\n    time: 240,\n    chaos: 0,\n    swats: 0,\n    broken: 0,\n    evidence: {\n      trail: false,\n      floor: false,\n      note: false,\n      scent: false,\n      buster: false,\n    },\n    message: \"The canary cage is empty. Barnaby smells trouble.\",\n  };\n\n  const INTRO_SCENES = [\n    {\n      kicker: \"Cold open\",\n      title: \"The bird knew too much.\",\n      copy:\n        \"At 3:07 AM, Sir Reginald sang one forbidden name into the storm. By breakfast, the gilded cage was swinging empty and every human in Milkglass Manor was lying badly.\",\n      objective: \"Find the first trail before the house wakes up.\",\n    },\n    {\n      kicker: \"Lightning over the study\",\n      title: \"Enter Barnaby.\",\n      copy:\n        \"Blue eyes. Cream fur. Gray mask. A trench coat two sizes too dramatic. Barnaby does not ask permission. Barnaby asks gravity.\",\n      objective: \"Move, jump, swat, and let the room confess.\",\n    },\n    {\n      kicker: \"Partner in crime-solving\",\n      title: \"Cleo hears the walls blink.\",\n      copy:\n        \"Barnaby smells what humans hide. Cleo hears what wood remembers. Switch between them when the clues start talking in different languages.\",\n      objective: \"Use Scent and Whisker sense to crack the case.\",\n      cta: \"Play\",\n    },\n  ];\n\n  const STORY_BEATS = {\n    trail: [\n      {\n        kicker: \"Scene I\",\n        title: \"Feathers in the thunder.\",\n        copy:\n          \"A green trail burns across the dark like a confession with wings. Sir Reginald did not fly away. He was carried.\",\n        objective: \"Rip down the curtain and follow the glow.\",\n        cta: \"Continue\",\n      },\n    ],\n    floor: [\n      {\n        kicker: \"Scene II\",\n        title: \"Ink tells on the floor.\",\n        copy:\n          \"The bottle breaks. The floor drinks. A hidden seam appears, thin as a guilty smile.\",\n        objective: \"Switch to Cleo and read what the manor tried to bury.\",\n        cta: \"Continue\",\n      },\n    ],\n    note: [\n      {\n        kicker: \"Scene III\",\n        title: \"Meet at the garden gate.\",\n        copy:\n          \"The note is short, wet, and rude: 3 AM. Bring feathers. Somebody sold out a bird for peanut butter.\",\n        objective: \"Bring Barnaby back to sniff the chewed twine.\",\n        cta: \"Continue\",\n      },\n    ],\n    scent: [\n      {\n        kicker: \"Scene IV\",\n        title: \"Dog shampoo. Cheap peanut butter.\",\n        copy:\n          \"Barnaby knows that smell. Buster, the bulldog with the nervous paws, has been standing too close to the truth.\",\n        objective: \"Reach the pet door on the right and corner Buster.\",\n        cta: \"Continue\",\n      },\n    ],\n    buster: [\n      {\n        kicker: \"Final scene\",\n        title: \"The bulldog breaks.\",\n        copy:\n          \"Buster folds before the second meow. The Alley Pigeon paid him in peanut butter. Sir Reginald knew about the downtown breadcrumb syndicate.\",\n        objective: \"Case closed. Mostly. The curtains may need a lawyer.\",\n        cta: \"Close Case\",\n      },\n    ],\n  };\n\n  const MYSTERIES = [\n    {\n      id: \"Case P-17\",\n      culprit: \"Alley Pigeon\",\n      suspects: [\n        [\"Alley Pigeon\", \"breadcrumb syndicate runner\"],\n        [\"Buster\", \"nervous gate dog\"],\n        [\"Madame Parrot\", \"opera mimic\"],\n        [\"Mittens\", \"jealous window cat\"],\n      ],\n      motive: \"Sir Reginald learned the downtown breadcrumb route.\",\n      reveals: {\n        trail: \"Barnaby: green feather oil, but no cage dust. The bird was carried outside.\",\n        floor: \"Ink exposes a hidden seam packed with breadcrumb dust.\",\n        note: \"Cleo reads: Garden gate. 3 AM. Bring feathers.\",\n        scent: \"Barnaby smells peanut butter used as payment, plus wet pigeon down.\",\n      },\n      win: \"The Alley Pigeon cracks. Sir Reginald witnessed the breadcrumb syndicate moving through Milkglass Manor.\",\n    },\n    {\n      id: \"Case B-04\",\n      culprit: \"Buster\",\n      suspects: [\n        [\"Buster\", \"nervous gate dog\"],\n        [\"Alley Pigeon\", \"breadcrumb syndicate runner\"],\n        [\"Madame Parrot\", \"opera mimic\"],\n        [\"Mittens\", \"jealous window cat\"],\n      ],\n      motive: \"The canary knew Buster chewed the owner's victory slippers.\",\n      reveals: {\n        trail: \"Barnaby: oily feathers drag low, exactly at bulldog nose height.\",\n        floor: \"Ink reveals a paw-scuffed compartment under the rug.\",\n        note: \"Cleo reads: Bring feathers, or the slipper secret sings.\",\n        scent: \"Barnaby smells dog shampoo, cheap peanut butter, and pure panic.\",\n      },\n      win: \"Buster confesses between hiccuping barks. The canary was hidden as blackmail protection.\",\n    },\n    {\n      id: \"Case M-22\",\n      culprit: \"Madame Parrot\",\n      suspects: [\n        [\"Madame Parrot\", \"opera mimic\"],\n        [\"Mittens\", \"jealous window cat\"],\n        [\"Buster\", \"nervous gate dog\"],\n        [\"Alley Pigeon\", \"breadcrumb syndicate runner\"],\n      ],\n      motive: \"Sir Reginald stole her thunder by singing the aria first.\",\n      reveals: {\n        trail: \"Barnaby: the feather trail smells like perfume, polish, and stage fright.\",\n        floor: \"Ink seeps into a compartment lined with torn sheet music.\",\n        note: \"Cleo reads: No encore for the yellow soprano.\",\n        scent: \"Barnaby catches birdseed, violet perfume, and fake bulldog shampoo.\",\n      },\n      win: \"Madame Parrot repeats the confession in three voices. Sir Reginald was stashed backstage in the pantry.\",\n    },\n  ];\n\n  const STORY_LABELS = {\n    trail: \"Find the canary trail\",\n    floor: \"Expose the floorboard compartment\",\n    note: \"Read the hidden note\",\n    scent: \"Identify the peanut-butter scent\",\n    buster: \"Crack Buster's story\",\n  };\n\n  const MULTI_LABELS = {\n    trail: \"P1 scent: track the feather trail\",\n    floor: \"Break the room open for a hidden compartment\",\n    note: \"P2 whiskers: read the secret note\",\n    scent: \"P1 scent: match the culprit's odor\",\n    buster: \"Vote together and accuse the culprit\",\n  };\n\n  const player = {\n    x: 38,\n    y: GROUND - 22,\n    vx: 0,\n    vy: 0,\n    w: 26,\n    h: 22,\n    facing: 1,\n    onGround: false,\n    step: 0,\n  };\n\n  const player2 = {\n    x: 64,\n    y: GROUND - 22,\n    vx: 0,\n    vy: 0,\n    w: 24,\n    h: 21,\n    facing: 1,\n    onGround: false,\n    step: 0,\n  };\n\n  const objects = [];\n\n  function resetObjects() {\n    objects.length = 0;\n    objects.push(\n      {\n        id: \"ink\",\n        name: \"ink bottle\",\n        type: \"bottle\",\n        x: 102,\n        y: 88,\n        w: 11,\n        h: 15,\n        vx: 0,\n        vy: 0,\n        dynamic: false,\n        broken: false,\n        precious: false,\n        clue: true,\n      },\n      {\n        id: \"vase\",\n        name: \"crystal vase\",\n        type: \"vase\",\n        x: 144,\n        y: 83,\n        w: 13,\n        h: 20,\n        vx: 0,\n        vy: 0,\n        dynamic: false,\n        broken: false,\n        precious: true,\n      },\n      {\n        id: \"clock\",\n        name: \"clock pendulum\",\n        type: \"pendulum\",\n        x: 35,\n        y: 76,\n        w: 9,\n        h: 36,\n        vx: 0,\n        vy: 0,\n        dynamic: false,\n        broken: false,\n        precious: true,\n      },\n      {\n        id: \"book1\",\n        name: \"ledger\",\n        type: \"book\",\n        x: 203,\n        y: 97,\n        w: 14,\n        h: 6,\n        vx: 0,\n        vy: 0,\n        dynamic: false,\n        broken: false,\n        precious: false,\n      },\n      {\n        id: \"book2\",\n        name: \"atlas\",\n        type: \"book\",\n        x: 217,\n        y: 91,\n        w: 16,\n        h: 7,\n        vx: 0,\n        vy: 0,\n        dynamic: false,\n        broken: false,\n        precious: false,\n      }\n    );\n  }\n\n  const curtain = {\n    x: 247,\n    y: 33,\n    w: 45,\n    h: 86,\n    hp: 3,\n    falling: false,\n    fallen: false,\n    vy: 0,\n  };\n\n  function setEvidenceLabels(labels) {\n    [...evidenceList.children].forEach((item) => {\n      item.textContent = labels[item.dataset.key] || item.textContent;\n    });\n  }\n\n  function stopOnline(clearUrl = true) {\n    online.enabled = false;\n    online.roomCode = \"\";\n    online.playerId = \"\";\n    online.role = \"\";\n    online.slot = 0;\n    online.input.left = false;\n    online.input.right = false;\n    online.pendingActions.length = 0;\n    if (online.pollTimer) {\n      clearInterval(online.pollTimer);\n      online.pollTimer = null;\n    }\n    onlinePanel.classList.add(\"hidden\");\n    if (clearUrl) {\n      const url = new URL(window.location.href);\n      url.searchParams.delete(\"room\");\n      window.history.replaceState({}, \"\", url);\n    }\n  }\n\n  function resetGame() {\n    stopOnline();\n    gameMode = \"story\";\n    started = true;\n    ended = false;\n    activeCat = \"barnaby\";\n    senseOn = false;\n    barnabySense = false;\n    cleoSense = false;\n    swatCooldown = 0;\n    cleoSwatCooldown = 0;\n    sensePulse = 0;\n    sceneShake = 0;\n    lightningFlash = 0.45;\n    lightningTimer = 1.2;\n    solved = false;\n    currentMystery = null;\n    state.time = 240;\n    state.chaos = 0;\n    state.swats = 0;\n    state.broken = 0;\n    state.evidence = {\n      trail: false,\n      floor: false,\n      note: false,\n      scent: false,\n      buster: false,\n    };\n    state.message = \"The canary cage is empty. Barnaby smells trouble.\";\n    Object.assign(player, {\n      x: 38,\n      y: GROUND - 22,\n      vx: 0,\n      vy: 0,\n      facing: 1,\n      onGround: false,\n      step: 0,\n    });\n    Object.assign(player2, {\n      x: 64,\n      y: GROUND - 22,\n      vx: 0,\n      vy: 0,\n      facing: 1,\n      onGround: false,\n      step: 0,\n    });\n    Object.assign(curtain, {\n      x: 247,\n      y: 33,\n      w: 45,\n      h: 86,\n      hp: 3,\n      falling: false,\n      fallen: false,\n      vy: 0,\n    });\n    pulses.length = 0;\n    particles.length = 0;\n    floaters.length = 0;\n    resetObjects();\n    startPanel.classList.add(\"hidden\");\n    endPanel.classList.add(\"hidden\");\n    cutscene.classList.add(\"hidden\");\n    screenWrap.classList.remove(\"cinematic\");\n    whodunitPanel.classList.add(\"hidden\");\n    setEvidenceLabels(STORY_LABELS);\n    updateHud();\n  }\n\n  function resetMultiplayer() {\n    stopOnline();\n    gameMode = \"multi\";\n    started = true;\n    ended = false;\n    activeCat = \"barnaby\";\n    senseOn = false;\n    barnabySense = false;\n    cleoSense = false;\n    swatCooldown = 0;\n    cleoSwatCooldown = 0;\n    sensePulse = 0;\n    sceneShake = 0;\n    lightningFlash = 0.55;\n    lightningTimer = 1;\n    solved = false;\n    currentMystery = MYSTERIES[Math.floor(Math.random() * MYSTERIES.length)];\n    state.time = 300;\n    state.chaos = 0;\n    state.swats = 0;\n    state.broken = 0;\n    state.evidence = {\n      trail: false,\n      floor: false,\n      note: false,\n      scent: false,\n      buster: false,\n    };\n    state.message = \"Two detectives. One liar. The manor starts sweating.\";\n    Object.assign(player, {\n      x: 35,\n      y: GROUND - 22,\n      vx: 0,\n      vy: 0,\n      facing: 1,\n      onGround: false,\n      step: 0,\n    });\n    Object.assign(player2, {\n      x: 64,\n      y: GROUND - 22,\n      vx: 0,\n      vy: 0,\n      facing: 1,\n      onGround: false,\n      step: 0,\n    });\n    Object.assign(curtain, {\n      x: 247,\n      y: 33,\n      w: 45,\n      h: 86,\n      hp: 3,\n      falling: false,\n      fallen: false,\n      vy: 0,\n    });\n    pulses.length = 0;\n    particles.length = 0;\n    floaters.length = 0;\n    resetObjects();\n    startPanel.classList.add(\"hidden\");\n    endPanel.classList.add(\"hidden\");\n    cutscene.classList.add(\"hidden\");\n    screenWrap.classList.remove(\"cinematic\");\n    whodunitPanel.classList.remove(\"hidden\");\n    setEvidenceLabels(MULTI_LABELS);\n    renderWhodunit();\n    beginCutscene(\n      [\n        {\n          kicker: \"Co-op whodunit\",\n          title: \"One manor. Two noses. Four suspects.\",\n          copy:\n            \"Barnaby sees what glows. Cleo hears what lies. This time the culprit is shuffled, so every run needs a fresh accusation.\",\n          objective: \"P1: A/D/W/F/E. P2: arrows/K/L. Collect clues, then accuse together.\",\n          cta: \"Investigate\",\n        },\n      ],\n      null\n    );\n    updateHud();\n  }\n\n  function beginCutscene(scenes, onDone) {\n    cutsceneQueue = scenes;\n    cutsceneIndex = 0;\n    cutsceneDone = onDone;\n    cutsceneActive = true;\n    cutscene.classList.remove(\"hidden\");\n    screenWrap.classList.add(\"cinematic\");\n    sceneShake = Math.max(sceneShake, 3);\n    lightningFlash = 0.75;\n    showCutsceneCard();\n  }\n\n  function showCutsceneCard() {\n    const scene = cutsceneQueue[cutsceneIndex];\n    if (!scene) {\n      endCutscene();\n      return;\n    }\n    cutsceneKicker.textContent = scene.kicker;\n    cutsceneTitle.textContent = scene.title;\n    cutsceneCopy.textContent = scene.copy;\n    cutsceneObjective.textContent = scene.objective;\n    nextCutsceneButton.textContent = scene.cta || (cutsceneIndex === cutsceneQueue.length - 1 ? \"Continue\" : \"Next\");\n  }\n\n  function endCutscene() {\n    cutscene.classList.add(\"hidden\");\n    screenWrap.classList.remove(\"cinematic\");\n    cutsceneActive = false;\n    const done = cutsceneDone;\n    cutsceneDone = null;\n    cutsceneQueue = [];\n    cutsceneIndex = 0;\n    if (done) done();\n  }\n\n  function advanceCutscene() {\n    cutsceneIndex += 1;\n    lightningFlash = 0.62;\n    sceneShake = Math.max(sceneShake, 2.5);\n    if (cutsceneIndex >= cutsceneQueue.length) {\n      endCutscene();\n    } else {\n      showCutsceneCard();\n    }\n  }\n\n  function storyBeat(key) {\n    if (!STORY_BEATS[key]) return;\n    beginCutscene(STORY_BEATS[key], () => {\n      if (key === \"buster\") {\n        finish(\n          true,\n          \"Case closed\",\n          \"Buster folds before the second meow. The Alley Pigeon took Sir Reginald to the breadcrumb syndicate, and Barnaby leaves only moderate structural damage behind.\"\n        );\n      }\n    });\n  }\n\n  function multiplayerBeat(key, text) {\n    if (key === \"buster\") return;\n    const doneCount = Object.values(state.evidence).filter(Boolean).length;\n    beginCutscene(\n      [\n        {\n          kicker: `Co-op clue ${Math.min(doneCount, 4)}/4`,\n          title: key === \"trail\" ? \"The trail changes.\" : key === \"floor\" ? \"The room confesses.\" : key === \"note\" ? \"The note bites back.\" : \"The smell narrows.\",\n          copy: text,\n          objective:\n            doneCount >= 4\n              ? \"Enough evidence. Pick a suspect from the Whodunit board.\"\n              : \"Keep splitting senses. One cat cannot solve this alone.\",\n          cta: \"Continue\",\n        },\n      ],\n      null\n    );\n  }\n\n  function renderWhodunit() {\n    if (!currentMystery) return;\n    mysterySeed.textContent = currentMystery.id;\n    const clueCount = [\"trail\", \"floor\", \"note\", \"scent\"].filter((key) => state.evidence[key]).length;\n    suspectGrid.innerHTML = currentMystery.suspects\n      .map(([name, role]) => `<div class=\"suspect-card\"><strong>${name}</strong><span>${role}</span></div>`)\n      .join(\"\");\n    accuseButtons.innerHTML = currentMystery.suspects\n      .map(([name]) => `<button type=\"button\" data-suspect=\"${name}\" ${clueCount < 4 || ended ? \"disabled\" : \"\"}>Accuse ${name}</button>`)\n      .join(\"\");\n    whodunitStatus.textContent =\n      clueCount < 4\n        ? `${clueCount}/4 clues locked. Culprit motive: ${currentMystery.motive}`\n        : \"Evidence is ready. Choose carefully: one accusation closes the case.\";\n    accuseButtons.querySelectorAll(\"button\").forEach((button) => {\n      button.addEventListener(\"click\", () => accuse(button.dataset.suspect));\n    });\n  }\n\n  function escapeHtml(value) {\n    return String(value).replace(/[&<>\"']/g, (match) => ({\n      \"&\": \"&amp;\",\n      \"<\": \"&lt;\",\n      \">\": \"&gt;\",\n      '\"': \"&quot;\",\n      \"'\": \"&#39;\",\n    })[match]);\n  }\n\n  function cleanRoomCode(value) {\n    return String(value || \"\").toUpperCase().replace(/[^A-Z0-9]/g, \"\").slice(0, 6);\n  }\n\n  function getPlayerName() {\n    const name = playerNameInput.value.trim().slice(0, 18) || \"Guest Detective\";\n    localStorage.setItem(\"whiskerDetectiveName\", name);\n    return name;\n  }\n\n  function setLobbyStatus(text, tone = \"normal\") {\n    lobbyStatus.textContent = text;\n    lobbyStatus.style.color = tone === \"bad\" ? colors.red : tone === \"good\" ? colors.green : \"#dbc6a7\";\n  }\n\n  async function api(path, body) {\n    const response = await fetch(path, {\n      method: body ? \"POST\" : \"GET\",\n      headers: body ? { \"Content-Type\": \"application/json\" } : undefined,\n      body: body ? JSON.stringify(body) : undefined,\n    });\n    const payload = await response.json().catch(() => ({}));\n    if (!response.ok) {\n      throw new Error(payload.error || \"The room did not answer.\");\n    }\n    return payload;\n  }\n\n  function inviteUrl(code = online.roomCode) {\n    const url = new URL(window.location.href);\n    url.searchParams.set(\"room\", code);\n    return url.toString();\n  }\n\n  function queueOnlineAction(action) {\n    if (!online.enabled || ended) return;\n    online.pendingActions.push(action);\n    syncOnlineNow();\n  }\n\n  async function createOnlineRoom() {\n    setLobbyStatus(\"Opening the manor doors...\");\n    try {\n      const payload = await api(\"/api/rooms\", { name: getPlayerName() });\n      beginOnlineSession(payload, true);\n      setLobbyStatus(`Room ${payload.roomCode} is live. Share the code.`, \"good\");\n    } catch (error) {\n      setLobbyStatus(error.message, \"bad\");\n    }\n  }\n\n  async function joinOnlineRoom() {\n    const code = cleanRoomCode(roomCodeInput.value);\n    if (!code) {\n      setLobbyStatus(\"Enter a room code or create a new room.\", \"bad\");\n      return;\n    }\n    setLobbyStatus(`Looking for room ${code}...`);\n    try {\n      const payload = await api(`/api/rooms/${code}/join`, {\n        name: getPlayerName(),\n        playerId: sessionStorage.getItem(`whiskerPlayer:${code}`) || \"\",\n      });\n      beginOnlineSession(payload, false);\n      setLobbyStatus(`Joined ${payload.roomCode}.`, \"good\");\n    } catch (error) {\n      setLobbyStatus(error.message, \"bad\");\n    }\n  }\n\n  function beginOnlineSession(payload, created) {\n    online.enabled = true;\n    online.roomCode = payload.roomCode;\n    online.playerId = payload.playerId;\n    online.role = payload.role;\n    online.slot = payload.slot;\n    sessionStorage.setItem(`whiskerPlayer:${payload.roomCode}`, payload.playerId);\n    online.input.left = false;\n    online.input.right = false;\n    online.pendingActions.length = 0;\n    gameMode = \"online\";\n    started = true;\n    ended = false;\n    solved = false;\n    activeCat = payload.slot === 1 ? \"cleo\" : \"barnaby\";\n    senseOn = false;\n    resetObjects();\n    startPanel.classList.add(\"hidden\");\n    endPanel.classList.add(\"hidden\");\n    cutscene.classList.add(\"hidden\");\n    screenWrap.classList.remove(\"cinematic\");\n    whodunitPanel.classList.remove(\"hidden\");\n    onlinePanel.classList.remove(\"hidden\");\n    setEvidenceLabels(MULTI_LABELS);\n    const url = new URL(window.location.href);\n    url.searchParams.set(\"room\", payload.roomCode);\n    window.history.replaceState({}, \"\", url);\n    applyOnlineSnapshot(payload.state, payload);\n    if (online.pollTimer) clearInterval(online.pollTimer);\n    online.pollTimer = setInterval(syncOnlineNow, 180);\n    beginCutscene(\n      [\n        {\n          kicker: created ? \"Online room created\" : \"Online room joined\",\n          title: created ? \"The manor has a code.\" : \"The storm lets you in.\",\n          copy:\n            \"Every detective sees the same room, clues, timer, suspects, and final accusation. Share the code and split the senses.\",\n          objective:\n            online.slot < 2\n              ? `You are ${online.role}. Move with A/D, jump with W, swat with F, sense with E.`\n              : \"You are on clue-board duty. Watch the evidence and help call the culprit.\",\n          cta: \"Start Sync\",\n        },\n      ],\n      null\n    );\n  }\n\n  async function syncOnlineNow() {\n    if (!online.enabled || online.syncing || !online.roomCode || !online.playerId) return;\n    online.syncing = true;\n    const actions = online.pendingActions.splice(0);\n    try {\n      const payload = await api(`/api/rooms/${online.roomCode}/input`, {\n        playerId: online.playerId,\n        input: online.input,\n        actions,\n      });\n      applyOnlineSnapshot(payload.state, payload);\n    } catch (error) {\n      setLobbyStatus(error.message, \"bad\");\n      onlineStatus.textContent = `Sync interrupted: ${error.message}`;\n    } finally {\n      online.syncing = false;\n    }\n  }\n\n  function applyOnlineSnapshot(snapshot, payload = {}) {\n    if (!snapshot) return;\n    online.lastStateAt = Date.now();\n    if (payload.playerId) online.playerId = payload.playerId;\n    if (payload.role) online.role = payload.role;\n    if (Number.isInteger(payload.slot)) online.slot = payload.slot;\n    if (snapshot.code) online.roomCode = snapshot.code;\n    currentMystery = snapshot.mystery;\n    state.time = snapshot.time;\n    state.chaos = snapshot.chaos;\n    state.swats = snapshot.swats;\n    state.broken = snapshot.broken;\n    state.evidence = { ...snapshot.evidence };\n    state.message = snapshot.message;\n    const barnaby = snapshot.actors?.[0];\n    const cleo = snapshot.actors?.[1];\n    if (barnaby) Object.assign(player, barnaby);\n    if (cleo) Object.assign(player2, cleo);\n    barnabySense = Boolean(barnaby?.sense);\n    cleoSense = Boolean(cleo?.sense);\n    swatCooldown = barnaby?.cooldown || 0;\n    cleoSwatCooldown = cleo?.cooldown || 0;\n    Object.assign(curtain, snapshot.curtain || curtain);\n    if (Array.isArray(snapshot.objects)) {\n      objects.length = 0;\n      snapshot.objects.forEach((obj) => objects.push({ ...obj }));\n    }\n    ended = snapshot.status === \"ended\";\n    if (ended && snapshot.end) {\n      endChip.textContent = snapshot.end.chip;\n      endTitle.textContent = snapshot.end.title;\n      endCopy.textContent = snapshot.end.copy;\n      endPanel.classList.remove(\"hidden\");\n    } else {\n      endPanel.classList.add(\"hidden\");\n    }\n    renderWhodunit();\n    renderOnlinePanel(snapshot);\n    updateHud();\n  }\n\n  function renderOnlinePanel(snapshot) {\n    onlineRoomCode.textContent = online.roomCode || snapshot.code || \"------\";\n    const role = online.role || \"Detective\";\n    const clueCount = [\"trail\", \"floor\", \"note\", \"scent\"].filter((key) => state.evidence[key]).length;\n    onlineStatus.textContent =\n      snapshot.status === \"ended\"\n        ? \"Case closed for everyone in the room.\"\n        : `${role} · ${clueCount}/4 clues · screens syncing live`;\n    onlinePlayers.innerHTML = (snapshot.players || [])\n      .map(\n        (p) =>\n          `<div class=\"player-pill\"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.role)}${p.you ? \" · you\" : \"\"}</span></div>`\n      )\n      .join(\"\");\n  }\n\n  async function accuseOnline(name) {\n    if (!online.enabled || ended) return;\n    try {\n      const payload = await api(`/api/rooms/${online.roomCode}/accuse`, {\n        playerId: online.playerId,\n        suspect: name,\n      });\n      applyOnlineSnapshot(payload.state, payload);\n      lightningFlash = 0.7;\n      sceneShake = Math.max(sceneShake, 3);\n    } catch (error) {\n      setLobbyStatus(error.message, \"bad\");\n    }\n  }\n\n  async function resetOnlineRoom() {\n    if (!online.enabled) return;\n    try {\n      const payload = await api(`/api/rooms/${online.roomCode}/reset`, {\n        playerId: online.playerId,\n      });\n      applyOnlineSnapshot(payload.state, payload);\n      endPanel.classList.add(\"hidden\");\n      lightningFlash = 0.55;\n    } catch (error) {\n      setLobbyStatus(error.message, \"bad\");\n    }\n  }\n\n  function accuse(name) {\n    if (online.enabled) {\n      accuseOnline(name);\n      return;\n    }\n    if (ended || gameMode !== \"multi\" || !currentMystery) return;\n    state.evidence.buster = true;\n    renderWhodunit();\n    if (name === currentMystery.culprit) {\n      beginCutscene(\n        [\n          {\n            kicker: \"Final accusation\",\n            title: `${name} did it.`,\n            copy: currentMystery.win,\n            objective: \"Co-op solved. The security cam is already embarrassing.\",\n            cta: \"Close Case\",\n          },\n        ],\n        () => finish(true, \"Co-op case closed\", `${currentMystery.win}`)\n      );\n    } else {\n      addChaos(22, \"Wrong accusation. The house gets louder.\");\n      if (ended) return;\n      beginCutscene(\n        [\n          {\n            kicker: \"Bad accusation\",\n            title: `${name} hisses innocent.`,\n            copy: `The clue board does not line up. ${currentMystery.culprit} is still using the storm as cover.`,\n            objective: \"Review the clue text and accuse again before chaos hits 100%.\",\n            cta: \"Keep Playing\",\n          },\n        ],\n        () => {\n          state.evidence.buster = false;\n          renderWhodunit();\n        }\n      );\n    }\n    updateHud();\n  }\n\n  function rectsOverlap(a, b) {\n    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;\n  }\n\n  function clamp(value, min, max) {\n    return Math.max(min, Math.min(max, value));\n  }\n\n  function addFloater(text, x, y, color = colors.paper) {\n    floaters.push({ text, x, y, color, life: 1.4, vy: -0.22 });\n  }\n\n  function addParticles(x, y, count, color, spread = 1.6) {\n    for (let i = 0; i < count; i++) {\n      particles.push({\n        x,\n        y,\n        vx: (Math.random() - 0.5) * spread,\n        vy: -Math.random() * spread,\n        life: 0.7 + Math.random() * 0.5,\n        color,\n      });\n    }\n  }\n\n  function setMessage(message, x = player.x, y = player.y - 12, color = colors.paper) {\n    state.message = message;\n    addFloater(message, clamp(x, 12, W - 90), clamp(y, 16, H - 24), color);\n  }\n\n  function addChaos(amount, reason) {\n    state.chaos = clamp(state.chaos + amount, 0, 100);\n    if (reason) {\n      setMessage(reason, player.x - 12, player.y - 12, amount > 12 ? colors.red : colors.amber);\n    }\n    if (state.chaos >= 100) {\n      finish(false, \"Bathroom jail\", \"Thunder covers many crimes. It does not cover the priceless vase, the clock, or the fact that Barnaby looks wildly satisfied.\");\n    }\n  }\n\n  function markEvidence(key, text, actor = player) {\n    if (state.evidence[key]) return;\n    state.evidence[key] = true;\n    const shownText =\n      gameMode === \"multi\" && currentMystery?.reveals[key]\n        ? currentMystery.reveals[key]\n        : text;\n    setMessage(shownText, actor.x - 14, actor.y - 14, colors.green);\n    addParticles(actor.x + actor.w / 2, actor.y + 8, 18, colors.green, 2.3);\n    pulse(actor.x + actor.w / 2, actor.y + 10, colors.green);\n    if (gameMode === \"multi\") {\n      multiplayerBeat(key, shownText);\n      renderWhodunit();\n    } else if (STORY_BEATS[key]) {\n      storyBeat(key);\n    }\n    updateHud();\n  }\n\n  function pulse(x, y, color) {\n    pulses.push({ x, y, color, r: 3, life: 0.9 });\n  }\n\n  function switchCat() {\n    activeCat = activeCat === \"barnaby\" ? \"cleo\" : \"barnaby\";\n    senseOn = true;\n    sensePulse = 0.2;\n    const label = activeCat === \"barnaby\" ? \"Barnaby takes the scent.\" : \"Cleo listens through her whiskers.\";\n    setMessage(label, player.x - 10, player.y - 12, activeCat === \"barnaby\" ? colors.blue : colors.amber);\n    updateHud();\n  }\n\n  function toggleSense() {\n    if (gameMode === \"multi\") {\n      toggleBarnabySense();\n      return;\n    }\n    senseOn = !senseOn;\n    sensePulse = 0.5;\n    pulse(player.x + player.w / 2, player.y + 10, activeCat === \"barnaby\" ? colors.blue : colors.amber);\n    updateHud();\n    inspectNearby();\n  }\n\n  function toggleBarnabySense() {\n    barnabySense = !barnabySense;\n    sensePulse = 0.5;\n    pulse(player.x + player.w / 2, player.y + 10, colors.blue);\n    setMessage(barnabySense ? \"Barnaby's scent sight is live.\" : \"Barnaby blinks the scent away.\", player.x - 10, player.y - 12, colors.blue);\n    inspectMultiplayer();\n    updateHud();\n  }\n\n  function toggleCleoSense() {\n    cleoSense = !cleoSense;\n    sensePulse = 0.5;\n    pulse(player2.x + player2.w / 2, player2.y + 10, colors.amber);\n    setMessage(cleoSense ? \"Cleo hears the walls breathe.\" : \"Cleo lowers her whiskers.\", player2.x - 10, player2.y - 12, colors.amber);\n    inspectMultiplayer();\n    updateHud();\n  }\n\n  function jump() {\n    if (!started || ended || cutsceneActive) return;\n    jumpActor(player);\n  }\n\n  function jumpCleo() {\n    if (!started || ended || cutsceneActive) return;\n    jumpActor(player2);\n  }\n\n  function jumpActor(actor) {\n    if (actor.onGround) {\n      actor.vy = -6.1;\n      actor.onGround = false;\n      addParticles(actor.x + actor.w / 2, actor.y + actor.h, 5, \"#80604a\", 1);\n    }\n  }\n\n  function swat() {\n    if (!started || ended || cutsceneActive || swatCooldown > 0) return;\n    swatCooldown = 0.26;\n    swatActor(player);\n  }\n\n  function swatCleo() {\n    if (!started || ended || cutsceneActive || cleoSwatCooldown > 0) return;\n    cleoSwatCooldown = 0.26;\n    swatActor(player2);\n  }\n\n  function swatActor(actor) {\n    state.swats += 1;\n    const paw = {\n      x: actor.facing > 0 ? actor.x + actor.w - 2 : actor.x - 16,\n      y: actor.y + 6,\n      w: 18,\n      h: 12,\n    };\n    let hit = false;\n\n    for (const obj of objects) {\n      if (obj.broken) continue;\n      if (rectsOverlap(paw, obj)) {\n        hit = true;\n        obj.dynamic = true;\n        obj.vx += actor.facing * (2.2 + Math.random() * 0.5);\n        obj.vy -= 1.6;\n        sceneShake = Math.max(sceneShake, 3);\n        addParticles(obj.x + obj.w / 2, obj.y + obj.h / 2, 8, colors.amber, 2.1);\n        if (obj.precious) addChaos(4, \"That sounded expensive.\");\n      }\n    }\n\n    if (!curtain.fallen && rectsOverlap(paw, curtain)) {\n      hit = true;\n      curtain.hp -= 1;\n      sceneShake = Math.max(sceneShake, 2);\n      addParticles(curtain.x + 12, curtain.y + 8 + curtain.hp * 18, 9, \"#8c2d35\", 1.8);\n      if (curtain.hp <= 0) {\n        curtain.falling = true;\n        markEvidence(\"trail\", \"A neon feather trail glows behind the drapes.\", actor);\n        addChaos(8, \"The curtains surrender.\");\n      } else {\n        setMessage(\"The curtain rings groan.\", curtain.x - 30, curtain.y + 20, colors.amber);\n      }\n    }\n\n    if (!hit) {\n      addParticles(paw.x + paw.w / 2, paw.y + 8, 5, colors.paper, 1.4);\n      setMessage(\"A very forensic swat.\", actor.x - 8, actor.y - 10, colors.paper);\n    }\n  }\n\n  function inspectNearby() {\n    if (!senseOn || !started || ended || cutsceneActive) return;\n    const centerX = player.x + player.w / 2;\n\n    if (activeCat === \"barnaby\") {\n      if (Math.abs(centerX - 266) < 52 && !state.evidence.trail) {\n        markEvidence(\"trail\", \"Oily feathers. The trail climbs to the curtain rod.\");\n      }\n      if (state.evidence.floor && Math.abs(centerX - 151) < 34 && !state.evidence.scent) {\n        markEvidence(\"scent\", \"Cheap peanut butter. Dog shampoo. Buster was here.\");\n      }\n    } else {\n      if (state.evidence.floor && Math.abs(centerX - 146) < 34 && !state.evidence.note) {\n        markEvidence(\"note\", \"The note reads: garden gate, 3 AM, bring feathers.\");\n      }\n    }\n  }\n\n  function inspectMultiplayer() {\n    if (gameMode !== \"multi\" || !started || ended || cutsceneActive) return;\n    const barnabyX = player.x + player.w / 2;\n    const cleoX = player2.x + player2.w / 2;\n    if (barnabySense) {\n      if (Math.abs(barnabyX - 266) < 52 && !state.evidence.trail) {\n        markEvidence(\"trail\", \"Barnaby finds a feather trail that refuses to behave.\", player);\n      }\n      if (state.evidence.floor && Math.abs(barnabyX - 151) < 38 && !state.evidence.scent) {\n        markEvidence(\"scent\", \"Barnaby matches the odor to a suspect.\", player);\n      }\n    }\n    if (cleoSense && state.evidence.floor && Math.abs(cleoX - 146) < 38 && !state.evidence.note) {\n      markEvidence(\"note\", \"Cleo reads the note the floor tried to swallow.\", player2);\n    }\n  }\n\n  function update(dt) {\n    updateStorm(dt);\n    if (!started || ended || cutsceneActive) return;\n    if (online.enabled) {\n      sensePulse = Math.max(0, sensePulse - dt);\n      updateEffects(dt);\n      updateHud();\n      return;\n    }\n    state.time -= dt;\n    if (state.time <= 0) {\n      finish(false, \"The humans are home\", \"The owner stepped into the study before Barnaby could name the culprit. The canary remains a cold case.\");\n      return;\n    }\n    if (gameMode === \"multi\") {\n      updateMultiplayer(dt);\n      return;\n    }\n\n    const left = keys.has(\"ArrowLeft\") || keys.has(\"a\") || keys.has(\"A\");\n    const right = keys.has(\"ArrowRight\") || keys.has(\"d\") || keys.has(\"D\");\n    const acceleration = activeCat === \"barnaby\" ? 0.44 : 0.52;\n    const maxSpeed = activeCat === \"barnaby\" ? 2.1 : 2.35;\n\n    if (left) {\n      player.vx -= acceleration;\n      player.facing = -1;\n    }\n    if (right) {\n      player.vx += acceleration;\n      player.facing = 1;\n    }\n    if (!left && !right) player.vx *= 0.78;\n    player.vx = clamp(player.vx, -maxSpeed, maxSpeed);\n    player.vy += GRAVITY;\n    player.x += player.vx;\n    player.y += player.vy;\n    player.x = clamp(player.x, 10, W - player.w - 10);\n\n    collideFurniture();\n\n    if (player.y + player.h >= GROUND) {\n      player.y = GROUND - player.h;\n      player.vy = 0;\n      player.onGround = true;\n    } else {\n      player.onGround = false;\n    }\n\n    player.step += Math.abs(player.vx) * dt;\n    swatCooldown = Math.max(0, swatCooldown - dt);\n    sensePulse = Math.max(0, sensePulse - dt);\n    sceneShake = Math.max(0, sceneShake - dt * 10);\n\n    updateObjects(dt);\n    updateEffects(dt);\n    inspectNearby();\n    maybeStartInterrogation();\n    updateHud();\n  }\n\n  function updateMultiplayer(dt) {\n    moveActor(player, keys.has(\"a\") || keys.has(\"A\"), keys.has(\"d\") || keys.has(\"D\"), 0.44, 2.1, dt);\n    moveActor(player2, keys.has(\"ArrowLeft\"), keys.has(\"ArrowRight\"), 0.52, 2.35, dt);\n    swatCooldown = Math.max(0, swatCooldown - dt);\n    cleoSwatCooldown = Math.max(0, cleoSwatCooldown - dt);\n    sensePulse = Math.max(0, sensePulse - dt);\n    updateObjects(dt);\n    updateEffects(dt);\n    inspectMultiplayer();\n    renderWhodunit();\n    updateHud();\n  }\n\n  function moveActor(actor, left, right, acceleration, maxSpeed, dt) {\n    if (left) {\n      actor.vx -= acceleration;\n      actor.facing = -1;\n    }\n    if (right) {\n      actor.vx += acceleration;\n      actor.facing = 1;\n    }\n    if (!left && !right) actor.vx *= 0.78;\n    actor.vx = clamp(actor.vx, -maxSpeed, maxSpeed);\n    actor.vy += GRAVITY;\n    actor.x += actor.vx;\n    actor.y += actor.vy;\n    actor.x = clamp(actor.x, 10, W - actor.w - 10);\n    collideFurniture(actor);\n    if (actor.y + actor.h >= GROUND) {\n      actor.y = GROUND - actor.h;\n      actor.vy = 0;\n      actor.onGround = true;\n    } else {\n      actor.onGround = false;\n    }\n    actor.step += Math.abs(actor.vx) * dt;\n  }\n\n  function updateStorm(dt) {\n    lightningTimer -= dt;\n    lightningFlash = Math.max(0, lightningFlash - dt * 2.8);\n    if (lightningTimer <= 0) {\n      lightningFork = Math.random();\n      lightningFlash = Math.random() > 0.38 ? 0.55 : 0.18;\n      sceneShake = Math.max(sceneShake, lightningFlash > 0.4 ? 2.4 : 0);\n      lightningTimer = 2.4 + Math.random() * 3.8;\n    }\n    sceneShake = Math.max(0, sceneShake - dt * 10);\n  }\n\n  function collideFurniture(actor = player) {\n    const shelves = [\n      { x: 192, y: 105, w: 53, h: 7 },\n      { x: 75, y: 104, w: 94, h: 9 },\n    ];\n    for (const s of shelves) {\n      const next = { x: actor.x, y: actor.y, w: actor.w, h: actor.h };\n      if (rectsOverlap(next, s) && actor.vy >= 0 && actor.y + actor.h - actor.vy <= s.y + 2) {\n        actor.y = s.y - actor.h;\n        actor.vy = 0;\n        actor.onGround = true;\n      }\n    }\n  }\n\n  function updateObjects(dt) {\n    if (curtain.falling && !curtain.fallen) {\n      curtain.vy += 0.5;\n      curtain.y += curtain.vy;\n      if (curtain.y + curtain.h >= GROUND) {\n        curtain.y = GROUND - curtain.h + 18;\n        curtain.fallen = true;\n        curtain.falling = false;\n        sceneShake = 7;\n        const ink = objects.find((o) => o.id === \"ink\" && !o.broken);\n        if (ink) {\n          ink.dynamic = true;\n          ink.vx = -1.9;\n          ink.vy = -2.4;\n        }\n      }\n    }\n\n    for (const obj of objects) {\n      if (obj.broken || !obj.dynamic) continue;\n      obj.vy += GRAVITY;\n      obj.x += obj.vx;\n      obj.y += obj.vy;\n      obj.vx *= 0.985;\n      if (obj.x < 12 || obj.x + obj.w > W - 12) {\n        obj.x = clamp(obj.x, 12, W - obj.w - 12);\n        obj.vx *= -0.45;\n      }\n      if (obj.y + obj.h >= GROUND) {\n        obj.y = GROUND - obj.h;\n        obj.vy *= -0.26;\n        obj.vx *= 0.78;\n        if (Math.abs(obj.vy) < 0.7) obj.vy = 0;\n        if (obj.id === \"ink\" && !state.evidence.floor) {\n          obj.broken = true;\n          state.broken += 1;\n          markEvidence(\"floor\", \"Black ink drains into a hidden floorboard seam.\");\n          addParticles(obj.x + obj.w / 2, obj.y + obj.h, 24, \"#17151d\", 2.5);\n        } else if (obj.precious && Math.abs(obj.vx) > 0.9) {\n          obj.broken = true;\n          state.broken += 1;\n          addChaos(obj.id === \"vase\" ? 23 : 16, `${obj.name} becomes evidence-adjacent.`);\n          addParticles(obj.x + obj.w / 2, obj.y + obj.h / 2, 20, obj.id === \"vase\" ? \"#bbd5e4\" : colors.gold, 2.8);\n        }\n      }\n    }\n  }\n\n  function updateEffects(dt) {\n    for (let i = pulses.length - 1; i >= 0; i--) {\n      pulses[i].r += dt * 34;\n      pulses[i].life -= dt;\n      if (pulses[i].life <= 0) pulses.splice(i, 1);\n    }\n    for (let i = particles.length - 1; i >= 0; i--) {\n      const p = particles[i];\n      p.life -= dt;\n      p.vy += 0.05;\n      p.x += p.vx;\n      p.y += p.vy;\n      if (p.life <= 0) particles.splice(i, 1);\n    }\n    for (let i = floaters.length - 1; i >= 0; i--) {\n      const f = floaters[i];\n      f.life -= dt;\n      f.y += f.vy;\n      if (f.life <= 0) floaters.splice(i, 1);\n    }\n  }\n\n  function maybeStartInterrogation() {\n    if (solved || !state.evidence.note || !state.evidence.scent) return;\n    if (player.x > 266) {\n      solved = true;\n      state.evidence.buster = true;\n      updateHud();\n      storyBeat(\"buster\");\n    } else if (player.x > 238) {\n      setMessage(\"Pet door ahead. Buster is pacing by the garden gate.\", 184, 82, colors.amber);\n    }\n  }\n\n  function finish(won, chip, copy) {\n    if (ended) return;\n    ended = true;\n    endChip.textContent = chip;\n    endTitle.textContent = won ? \"Sir Reginald is saved.\" : \"The trail goes cold.\";\n    endCopy.textContent = `${copy} Security cam recap: ${state.swats} swats, ${state.broken} broken objects, ${Math.round(state.chaos)}% chaos.`;\n    endPanel.classList.remove(\"hidden\");\n  }\n\n  function updateHud() {\n    const minutes = Math.max(0, Math.floor(state.time / 60));\n    const seconds = Math.max(0, Math.floor(state.time % 60));\n    clockEl.textContent = `${String(minutes).padStart(2, \"0\")}:${String(seconds).padStart(2, \"0\")}`;\n    chaosText.textContent = `${Math.round(state.chaos)}%`;\n    chaosBar.style.width = `${state.chaos}%`;\n    if (gameMode === \"multi\" || online.enabled) {\n      detectiveName.textContent = online.enabled\n        ? `${online.role || \"Online\"} · B ${barnabySense ? \"scent on\" : \"scent ready\"} · C ${cleoSense ? \"whiskers on\" : \"whiskers ready\"}`\n        : `Co-op · B ${barnabySense ? \"scent on\" : \"scent ready\"} · C ${cleoSense ? \"whiskers on\" : \"whiskers ready\"}`;\n      senseCopy.textContent =\n        online.enabled\n          ? \"Everyone shares the same clue board. Move your assigned cat, collect four clues, then accuse together.\"\n          : \"P1 Barnaby tracks smell with E. P2 Cleo reads notes and hollows with L. Accuse only after four clues.\";\n    } else {\n      detectiveName.textContent =\n        activeCat === \"barnaby\"\n          ? `Barnaby · ${senseOn ? \"Scent active\" : \"Scent ready\"}`\n          : `Cleo · ${senseOn ? \"Whiskers active\" : \"Whiskers ready\"}`;\n      senseCopy.textContent =\n        activeCat === \"barnaby\"\n          ? \"Scent sight makes chemical trails glow. Use it near suspicious evidence.\"\n          : \"Whisker resonance reads notes and hollow spaces that Barnaby cannot understand.\";\n    }\n    [...evidenceList.children].forEach((item) => {\n      item.classList.toggle(\"done\", Boolean(state.evidence[item.dataset.key]));\n    });\n  }\n\n  function draw() {\n    ctx.imageSmoothingEnabled = false;\n    ctx.save();\n    if (sceneShake > 0) {\n      ctx.translate(Math.round((Math.random() - 0.5) * sceneShake), Math.round((Math.random() - 0.5) * sceneShake));\n    }\n    drawRoom();\n    if (senseOn || barnabySense || cleoSense) drawSenseLayer();\n    drawFurniture();\n    drawCurtain();\n    drawObjects();\n    drawClues();\n    drawPlayer();\n    drawEffects();\n    drawDialogue();\n    drawLightning();\n    ctx.restore();\n  }\n\n  function fill(x, y, w, h, color) {\n    ctx.fillStyle = color;\n    ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));\n  }\n\n  function drawRoom() {\n    fill(0, 0, W, H, \"#111018\");\n    for (let y = 0; y < GROUND; y += 6) {\n      const tone = y % 12 === 0 ? \"#17131d\" : \"#1c1620\";\n      fill(0, y, W, 6, tone);\n    }\n    fill(0, 126, W, 30, \"#31201f\");\n    for (let x = 0; x < W; x += 22) {\n      fill(x, 126, 2, 30, \"#241515\");\n    }\n    fill(0, GROUND, W, H - GROUND, \"#201315\");\n    for (let x = -8; x < W; x += 32) {\n      fill(x, GROUND + 5, 28, 2, \"#4a2b22\");\n      fill(x + 2, GROUND + 16, 26, 2, \"#5e3829\");\n    }\n\n    drawWindow();\n    drawRain();\n    drawRug();\n    drawCage();\n    drawPetDoor();\n  }\n\n  function drawWindow() {\n    fill(18, 18, 66, 45, \"#07080e\");\n    fill(21, 21, 60, 39, \"#142232\");\n    fill(47, 21, 3, 39, \"#3b2b2a\");\n    fill(21, 39, 60, 3, \"#3b2b2a\");\n    fill(24, 24, 18, 12, \"#20425a\");\n    fill(53, 24, 24, 12, \"#6f3a56\");\n    fill(24, 43, 24, 13, \"#20425a\");\n    fill(53, 43, 24, 13, \"#b07b34\");\n    fill(15, 63, 74, 5, \"#36201e\");\n  }\n\n  function drawLightning() {\n    if (lightningFlash <= 0) return;\n    ctx.globalAlpha = Math.min(0.72, lightningFlash);\n    fill(0, 0, W, H, \"#d9f2ff\");\n    ctx.globalAlpha = Math.min(1, lightningFlash + 0.25);\n    ctx.strokeStyle = \"#f6fdff\";\n    ctx.lineWidth = 2;\n    const startX = 218 + lightningFork * 54;\n    ctx.beginPath();\n    ctx.moveTo(startX, 0);\n    ctx.lineTo(startX - 11, 25);\n    ctx.lineTo(startX + 5, 42);\n    ctx.lineTo(startX - 8, 70);\n    ctx.lineTo(startX + 11, 92);\n    ctx.stroke();\n    ctx.lineWidth = 1;\n    ctx.strokeStyle = \"#57b7e8\";\n    ctx.beginPath();\n    ctx.moveTo(startX - 4, 36);\n    ctx.lineTo(startX - 31, 60);\n    ctx.lineTo(startX - 20, 77);\n    ctx.stroke();\n    ctx.globalAlpha = 1;\n  }\n\n  function drawRain() {\n    ctx.strokeStyle = \"rgba(86, 177, 225, 0.32)\";\n    ctx.lineWidth = 1;\n    for (const drop of rain) {\n      drop.y += drop.s * 0.32;\n      drop.x -= drop.s * 0.07;\n      if (drop.y > H) drop.y = -8;\n      if (drop.x < -4) drop.x = W + 4;\n      ctx.beginPath();\n      ctx.moveTo(Math.round(drop.x), Math.round(drop.y));\n      ctx.lineTo(Math.round(drop.x - 3), Math.round(drop.y + 7));\n      ctx.stroke();\n    }\n  }\n\n  function drawRug() {\n    fill(72, 136, 148, 16, \"#5f2430\");\n    fill(78, 139, 136, 10, \"#8d4630\");\n    fill(99, 142, 92, 4, \"#cf9d4a\");\n    for (let x = 76; x < 218; x += 10) fill(x, 137, 4, 2, \"#e7c36b\");\n  }\n\n  function drawCage() {\n    fill(154, 21, 3, 33, colors.gold);\n    fill(139, 51, 34, 3, colors.gold);\n    fill(138, 53, 36, 28, \"#1d171c\");\n    for (let x = 143; x < 173; x += 6) fill(x, 55, 1, 24, colors.gold);\n    fill(138, 78, 36, 3, colors.gold);\n    fill(150, 49, 12, 4, colors.gold);\n    if (!state.evidence.trail || senseOn) {\n      fill(151, 67, 5, 3, \"#dcd267\");\n      fill(158, 63, 5, 3, \"#dcd267\");\n    }\n  }\n\n  function drawPetDoor() {\n    fill(291, 119, 19, 31, \"#0d0d12\");\n    fill(294, 123, 13, 27, \"#2a1c1c\");\n    fill(297, 128, 7, 22, \"#131116\");\n    if (state.evidence.note && state.evidence.scent) {\n      fill(289, 115, 24, 4, colors.green);\n      drawTinyBuster();\n    }\n  }\n\n  function drawTinyBuster() {\n    fill(284, 128, 18, 12, \"#9b7b60\");\n    fill(278, 125, 10, 11, \"#a98866\");\n    fill(279, 123, 4, 4, \"#6b503f\");\n    fill(286, 124, 4, 4, \"#6b503f\");\n    fill(281, 130, 2, 2, \"#111018\");\n    fill(287, 130, 2, 2, \"#111018\");\n    fill(275, 122, 4, 9, \"#7f5e48\");\n  }\n\n  function drawFurniture() {\n    fill(72, 103, 102, 8, colors.wood);\n    fill(79, 111, 8, 32, colors.woodDark);\n    fill(153, 111, 8, 32, colors.woodDark);\n    fill(81, 93, 78, 12, \"#5d392d\");\n    fill(84, 88, 50, 6, \"#7f4e36\");\n    fill(190, 104, 55, 7, \"#4a2d25\");\n    fill(197, 58, 40, 48, \"#332420\");\n    for (let y = 66; y <= 94; y += 13) fill(199, y, 36, 3, \"#6b4230\");\n    fill(21, 78, 29, 68, \"#2b1c1c\");\n    fill(26, 84, 19, 55, \"#4a2d25\");\n    fill(31, 95, 4, 31, colors.gold);\n    fill(30, 127, 8, 8, colors.gold);\n    fill(109, 73, 26, 15, \"#e3b45a\");\n    fill(113, 68, 18, 6, \"#fff1ba\");\n    fill(116, 61, 12, 8, \"#ffdf79\");\n    fill(114, 88, 20, 3, \"#8f5c25\");\n  }\n\n  function drawCurtain() {\n    if (curtain.fallen) {\n      fill(229, curtain.y + 36, 60, 10, \"#702633\");\n      fill(239, curtain.y + 27, 45, 11, \"#8d3040\");\n      fill(247, curtain.y + 20, 30, 9, \"#5d1d2d\");\n      return;\n    }\n    fill(curtain.x - 3, 30, curtain.w + 6, 6, \"#614326\");\n    for (let i = 0; i < 6; i++) {\n      fill(curtain.x + i * 8, curtain.y, 5, curtain.h, i % 2 ? \"#682637\" : \"#8b3042\");\n    }\n    fill(curtain.x, curtain.y + curtain.h - 4, curtain.w, 4, \"#4c1726\");\n    if (curtain.hp < 3) fill(curtain.x + 8, curtain.y + 18, 21, 4, \"#170e14\");\n    if (curtain.hp < 2) fill(curtain.x + 21, curtain.y + 38, 17, 5, \"#170e14\");\n  }\n\n  function drawObjects() {\n    for (const obj of objects) {\n      if (obj.broken) {\n        if (obj.id === \"ink\") drawInkSpill();\n        continue;\n      }\n      if (obj.type === \"bottle\") {\n        fill(obj.x + 3, obj.y, 5, 4, \"#231833\");\n        fill(obj.x + 1, obj.y + 4, 9, 11, \"#1a1426\");\n        fill(obj.x + 3, obj.y + 7, 5, 5, \"#443463\");\n      }\n      if (obj.type === \"vase\") {\n        fill(obj.x + 4, obj.y, 5, 4, \"#cce5f1\");\n        fill(obj.x + 1, obj.y + 4, 11, 13, \"#9fc5d6\");\n        fill(obj.x + 3, obj.y + 17, 7, 3, \"#d7edf5\");\n        fill(obj.x + 5, obj.y + 7, 3, 8, \"#ecfbff\");\n      }\n      if (obj.type === \"pendulum\") {\n        fill(obj.x + 4, obj.y, 2, 25, colors.gold);\n        fill(obj.x, obj.y + 24, 9, 12, \"#bd8431\");\n      }\n      if (obj.type === \"book\") {\n        fill(obj.x, obj.y, obj.w, obj.h, obj.id === \"book1\" ? \"#315170\" : \"#6d3642\");\n        fill(obj.x + 2, obj.y + 1, obj.w - 4, 1, \"#d7c6a6\");\n      }\n    }\n    if (state.evidence.floor) drawInkSpill();\n  }\n\n  function drawInkSpill() {\n    fill(132, 144, 48, 5, \"#09080d\");\n    fill(142, 138, 29, 7, \"#111018\");\n    fill(151, 132, 9, 10, \"#191622\");\n    fill(138, 149, 42, 2, \"#403847\");\n  }\n\n  function drawClues() {\n    if ((senseOn && activeCat === \"barnaby\") || barnabySense || state.evidence.trail) {\n      const glow = senseOn && activeCat === \"barnaby\" || barnabySense ? colors.green : \"rgba(104, 212, 119, 0.7)\";\n      fill(165, 62, 4, 3, glow);\n      fill(182, 58, 5, 3, glow);\n      fill(199, 54, 4, 3, glow);\n      fill(218, 49, 5, 3, glow);\n      fill(238, 47, 4, 3, glow);\n      fill(259, 44, 5, 3, glow);\n    }\n    if (state.evidence.floor) {\n      fill(147, 139, 21, 3, colors.amber);\n      fill(153, 134, 9, 5, \"#d0bf90\");\n      if ((senseOn && activeCat === \"cleo\") || cleoSense) {\n        ctx.strokeStyle = colors.amber;\n        ctx.lineWidth = 1;\n        for (let i = 0; i < 3; i++) {\n          ctx.beginPath();\n          ctx.arc(156, 137, 12 + i * 8 + Math.sin(performance.now() / 160) * 2, 0, Math.PI * 2);\n          ctx.stroke();\n        }\n      }\n    }\n    if (state.evidence.scent) {\n      fill(142, 130, 6, 4, colors.violet);\n      fill(151, 127, 4, 4, colors.violet);\n      fill(160, 130, 5, 4, colors.violet);\n    }\n  }\n\n  function drawSenseLayer() {\n    if (gameMode === \"multi\" || online.enabled) {\n      if (barnabySense) {\n        fill(0, 0, W, H, \"rgba(22, 52, 78, 0.28)\");\n        for (let i = 0; i < 8; i++) {\n          const x = 42 + i * 27 + Math.sin(performance.now() / 220 + i) * 3;\n          const y = 119 - (i % 3) * 14;\n          fill(x, y, 5, 3, i % 2 ? colors.green : colors.violet);\n        }\n      }\n      if (cleoSense) {\n        ctx.strokeStyle = \"rgba(240, 174, 72, 0.72)\";\n        for (let i = 0; i < 5; i++) {\n          ctx.beginPath();\n          ctx.arc(player2.x + player2.w / 2, player2.y + 10, 17 + i * 8 + sensePulse * 7, -0.4, 0.4);\n          ctx.stroke();\n        }\n      }\n      return;\n    }\n    const color = activeCat === \"barnaby\" ? \"rgba(22, 52, 78, 0.48)\" : \"rgba(71, 43, 17, 0.42)\";\n    fill(0, 0, W, H, color);\n    if (activeCat === \"barnaby\") {\n      for (let i = 0; i < 8; i++) {\n        const x = 42 + i * 27 + Math.sin(performance.now() / 220 + i) * 3;\n        const y = 119 - (i % 3) * 14;\n        fill(x, y, 5, 3, i % 2 ? colors.green : colors.violet);\n      }\n    } else {\n      ctx.strokeStyle = \"rgba(240, 174, 72, 0.72)\";\n      for (let i = 0; i < 5; i++) {\n        ctx.beginPath();\n        ctx.arc(player.x + player.w / 2, player.y + 10, 17 + i * 8 + sensePulse * 7, -0.4, 0.4);\n        ctx.stroke();\n      }\n    }\n  }\n\n  function drawPlayer() {\n    if (gameMode === \"multi\" || online.enabled) {\n      drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0, player);\n      drawCleo(player2.x, player2.y + 1, player2.facing, cleoSwatCooldown > 0, player2);\n      drawPlayerTag(player, online.enabled ? \"B\" : \"P1\", colors.blue);\n      drawPlayerTag(player2, online.enabled ? \"C\" : \"P2\", colors.amber);\n      return;\n    }\n    if (activeCat === \"barnaby\") {\n      drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0, player);\n    } else {\n      drawCleo(player.x, player.y + 1, player.facing, swatCooldown > 0, player);\n    }\n  }\n\n  function drawPlayerTag(actor, label, color) {\n    fill(actor.x + 5, actor.y - 9, 13, 7, \"rgba(8, 8, 11, 0.78)\");\n    drawPixelText(label, actor.x + 7, actor.y - 4, color, 18);\n  }\n\n  function drawBarnaby(x, y, facing, pawOut, actor = player) {\n    const bob = actor.onGround ? Math.sin(actor.step * 11) * 1 : 0;\n    const fx = facing < 0 ? -1 : 1;\n    const px = (dx) => x + (fx < 0 ? player.w - dx : dx);\n    fill(px(4), y + 7 + bob, 18, 13, colors.cream2);\n    fill(px(1), y + 10 + bob, 7, 8, colors.cream);\n    fill(px(18), y + 11 + bob, 8, 7, colors.cream);\n    fill(px(6), y + 2 + bob, 15, 12, colors.cream);\n    fill(px(7), y - 2 + bob, 5, 7, colors.cream2);\n    fill(px(16), y - 2 + bob, 5, 7, colors.cream2);\n    fill(px(9), y + 3 + bob, 10, 9, colors.mask);\n    fill(px(12), y + 1 + bob, 4, 12, colors.maskDark);\n    fill(px(8), y + 7 + bob, 4, 4, colors.blue);\n    fill(px(17), y + 7 + bob, 4, 4, colors.blue);\n    fill(px(9), y + 8 + bob, 1, 1, \"#e9fbff\");\n    fill(px(18), y + 8 + bob, 1, 1, \"#e9fbff\");\n    fill(px(13), y + 11 + bob, 4, 3, \"#c98686\");\n    fill(px(3), y + 15 + bob, 19, 7, \"#a07037\");\n    fill(px(1), y + 18 + bob, 5, 3, \"#5b371e\");\n    fill(px(18), y + 18 + bob, 5, 3, \"#5b371e\");\n    fill(px(0), y + 12 + bob, 3, 9, colors.cream);\n    if (pawOut) fill(px(22), y + 13 + bob, 9 * fx, 4, colors.cream);\n    fill(px(2), y + 18 + bob, 3, 6, colors.cream);\n    fill(px(17), y + 18 + bob, 3, 6, colors.cream);\n    fill(px(-4), y + 9 + bob, 8, 4, colors.cream2);\n  }\n\n  function drawCleo(x, y, facing, pawOut, actor = player) {\n    const bob = actor.onGround ? Math.sin(actor.step * 12) * 1 : 0;\n    const fx = facing < 0 ? -1 : 1;\n    const px = (dx) => x + (fx < 0 ? player.w - dx : dx);\n    fill(px(5), y + 9 + bob, 17, 11, \"#d2bd91\");\n    fill(px(9), y + 3 + bob, 13, 10, \"#e5d3a4\");\n    fill(px(10), y, 4, 5, \"#cf7135\");\n    fill(px(19), y, 4, 5, \"#2a2020\");\n    fill(px(15), y + 4 + bob, 5, 7, \"#2a2020\");\n    fill(px(12), y + 7 + bob, 3, 3, colors.amber);\n    fill(px(20), y + 7 + bob, 3, 3, colors.amber);\n    fill(px(16), y + 11 + bob, 3, 2, \"#9b6970\");\n    fill(px(8), y + 1 + bob, 15, 3, \"#2a2020\");\n    fill(px(11), y - 2 + bob, 10, 3, \"#2a2020\");\n    fill(px(1), y + 12 + bob, 5, 7, \"#d2bd91\");\n    if (pawOut) fill(px(21), y + 14 + bob, 9 * fx, 4, \"#e5d3a4\");\n    fill(px(4), y + 18 + bob, 3, 5, \"#e5d3a4\");\n    fill(px(18), y + 18 + bob, 3, 5, \"#2a2020\");\n    fill(px(-4), y + 12 + bob, 8, 3, \"#cf7135\");\n  }\n\n  function drawEffects() {\n    for (const p of particles) {\n      fill(p.x, p.y, 2, 2, p.color);\n    }\n    for (const pulseItem of pulses) {\n      ctx.strokeStyle = pulseItem.color;\n      ctx.globalAlpha = Math.max(0, pulseItem.life);\n      ctx.beginPath();\n      ctx.arc(pulseItem.x, pulseItem.y, pulseItem.r, 0, Math.PI * 2);\n      ctx.stroke();\n      ctx.globalAlpha = 1;\n    }\n    for (const f of floaters) {\n      ctx.globalAlpha = clamp(f.life, 0, 1);\n      drawPixelText(f.text, f.x, f.y, f.color, 80);\n      ctx.globalAlpha = 1;\n    }\n  }\n\n  function drawDialogue() {\n    fill(8, 8, 185, 24, \"rgba(8, 8, 11, 0.78)\");\n    fill(8, 31, 185, 1, colors.amber);\n    drawPixelText(state.message, 12, 15, colors.paper, 168);\n  }\n\n  function drawPixelText(text, x, y, color, maxWidth = 120) {\n    ctx.font = \"6px monospace\";\n    ctx.fillStyle = color;\n    const words = text.split(\" \");\n    let line = \"\";\n    let yy = y;\n    for (const word of words) {\n      const test = line ? `${line} ${word}` : word;\n      if (ctx.measureText(test).width > maxWidth && line) {\n        ctx.fillText(line, Math.round(x), Math.round(yy));\n        line = word;\n        yy += 8;\n      } else {\n        line = test;\n      }\n    }\n    ctx.fillText(line, Math.round(x), Math.round(yy));\n  }\n\n  function drawPortrait() {\n    pctx.imageSmoothingEnabled = false;\n    pctx.fillStyle = \"#111018\";\n    pctx.fillRect(0, 0, 96, 96);\n    pctx.fillStyle = \"#2b1d22\";\n    pctx.fillRect(0, 68, 96, 28);\n    pctx.fillStyle = \"#efe6d2\";\n    pctx.fillRect(17, 31, 62, 41);\n    pctx.fillRect(12, 44, 72, 35);\n    pctx.fillStyle = \"#d5c5a8\";\n    pctx.fillRect(18, 18, 16, 25);\n    pctx.fillRect(62, 18, 16, 25);\n    pctx.fillStyle = \"#bda98d\";\n    pctx.fillRect(22, 23, 8, 18);\n    pctx.fillRect(66, 23, 8, 18);\n    pctx.fillStyle = \"#756d66\";\n    pctx.fillRect(37, 28, 22, 27);\n    pctx.fillStyle = \"#4f4945\";\n    pctx.fillRect(45, 24, 8, 34);\n    pctx.fillRect(31, 50, 16, 8);\n    pctx.fillRect(55, 50, 16, 8);\n    pctx.fillStyle = \"#57b7e8\";\n    pctx.fillRect(29, 42, 14, 14);\n    pctx.fillRect(55, 42, 14, 14);\n    pctx.fillStyle = \"#121016\";\n    pctx.fillRect(34, 45, 6, 9);\n    pctx.fillRect(60, 45, 6, 9);\n    pctx.fillStyle = \"#ffffff\";\n    pctx.fillRect(32, 43, 3, 3);\n    pctx.fillRect(58, 43, 3, 3);\n    pctx.fillStyle = \"#d39491\";\n    pctx.fillRect(45, 59, 8, 6);\n    pctx.fillStyle = \"#f6efe2\";\n    pctx.fillRect(25, 72, 48, 15);\n    pctx.fillRect(13, 78, 69, 9);\n    pctx.fillStyle = \"#a07037\";\n    pctx.fillRect(18, 72, 60, 10);\n    pctx.fillStyle = \"#5b371e\";\n    pctx.fillRect(18, 80, 60, 4);\n  }\n\n  function loop(time) {\n    const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);\n    lastTime = time;\n    update(dt);\n    draw();\n    drawPortrait();\n    requestAnimationFrame(loop);\n  }\n\n  function refreshOnlineInput() {\n    if (!online.enabled) return;\n    online.input.left = keys.has(\"ArrowLeft\") || keys.has(\"a\") || keys.has(\"A\");\n    online.input.right = keys.has(\"ArrowRight\") || keys.has(\"d\") || keys.has(\"D\");\n  }\n\n  document.addEventListener(\"keydown\", (event) => {\n    if ([\"ArrowLeft\", \"ArrowRight\", \"ArrowUp\", \" \", \"Tab\"].includes(event.key)) {\n      event.preventDefault();\n    }\n    if (cutsceneActive && !event.repeat) {\n      if (event.key === \"Enter\" || event.key === \" \") advanceCutscene();\n      if (event.key === \"Escape\") endCutscene();\n      return;\n    }\n    keys.add(event.key);\n    if (online.enabled) {\n      refreshOnlineInput();\n      if (!event.repeat) {\n        if (event.key === \" \" || event.key === \"w\" || event.key === \"W\" || event.key === \"ArrowUp\") queueOnlineAction(\"jump\");\n        if (event.key === \"f\" || event.key === \"F\" || event.key === \"x\" || event.key === \"X\" || event.key === \"k\" || event.key === \"K\") queueOnlineAction(\"swat\");\n        if (event.key === \"e\" || event.key === \"E\" || event.key === \"l\" || event.key === \"L\") {\n          sensePulse = 0.5;\n          queueOnlineAction(\"sense\");\n        }\n      }\n      syncOnlineNow();\n      return;\n    }\n    if (gameMode === \"multi\") {\n      if ((event.key === \"w\" || event.key === \"W\") && !event.repeat) jump();\n      if (event.key === \"ArrowUp\" && !event.repeat) jumpCleo();\n      if ((event.key === \"f\" || event.key === \"F\") && !event.repeat) swat();\n      if ((event.key === \"k\" || event.key === \"K\") && !event.repeat) swatCleo();\n      if ((event.key === \"e\" || event.key === \"E\") && !event.repeat) toggleBarnabySense();\n      if ((event.key === \"l\" || event.key === \"L\") && !event.repeat) toggleCleoSense();\n      return;\n    }\n    if ((event.key === \" \" || event.key === \"w\" || event.key === \"W\" || event.key === \"ArrowUp\") && !event.repeat) jump();\n    if ((event.key === \"f\" || event.key === \"F\" || event.key === \"x\" || event.key === \"X\") && !event.repeat) swat();\n    if ((event.key === \"e\" || event.key === \"E\") && !event.repeat) toggleSense();\n    if (event.key === \"Tab\" && !event.repeat) switchCat();\n  });\n\n  document.addEventListener(\"keyup\", (event) => {\n    keys.delete(event.key);\n    if (online.enabled) {\n      refreshOnlineInput();\n      syncOnlineNow();\n    }\n  });\n\n  document.querySelectorAll(\"[data-hold]\").forEach((button) => {\n    const key = button.dataset.hold === \"left\" ? \"ArrowLeft\" : \"ArrowRight\";\n    const down = (event) => {\n      event.preventDefault();\n      keys.add(key);\n      if (online.enabled) {\n        refreshOnlineInput();\n        syncOnlineNow();\n      }\n    };\n    const up = (event) => {\n      event.preventDefault();\n      keys.delete(key);\n      if (online.enabled) {\n        refreshOnlineInput();\n        syncOnlineNow();\n      }\n    };\n    button.addEventListener(\"pointerdown\", down);\n    button.addEventListener(\"pointerup\", up);\n    button.addEventListener(\"pointercancel\", up);\n    button.addEventListener(\"pointerleave\", up);\n  });\n\n  document.querySelectorAll(\"[data-action]\").forEach((button) => {\n    button.addEventListener(\"click\", () => {\n      const action = button.dataset.action;\n      if (online.enabled) {\n        if (action === \"jump\") queueOnlineAction(\"jump\");\n        if (action === \"swat\") queueOnlineAction(\"swat\");\n        if (action === \"sense\") {\n          sensePulse = 0.5;\n          queueOnlineAction(\"sense\");\n        }\n        return;\n      }\n      if (action === \"jump\") jump();\n      if (action === \"swat\") swat();\n      if (action === \"sense\") toggleSense();\n      if (action === \"switch\") switchCat();\n    });\n  });\n\n  startButton.addEventListener(\"click\", () => {\n    startPanel.classList.add(\"hidden\");\n    beginCutscene(INTRO_SCENES, resetGame);\n  });\n  onlineButton.addEventListener(\"click\", () => {\n    onlineLobby.classList.toggle(\"hidden\");\n    roomCodeInput.value = cleanRoomCode(roomCodeInput.value);\n    if (!onlineLobby.classList.contains(\"hidden\")) {\n      roomCodeInput.focus();\n    }\n  });\n  createRoomButton.addEventListener(\"click\", createOnlineRoom);\n  joinRoomButton.addEventListener(\"click\", joinOnlineRoom);\n  roomCodeInput.addEventListener(\"input\", () => {\n    roomCodeInput.value = cleanRoomCode(roomCodeInput.value);\n  });\n  roomCodeInput.addEventListener(\"keydown\", (event) => {\n    if (event.key === \"Enter\") joinOnlineRoom();\n  });\n  copyInviteButton.addEventListener(\"click\", async () => {\n    const link = inviteUrl();\n    try {\n      await navigator.clipboard.writeText(link);\n      onlineStatus.textContent = `Invite copied: ${online.roomCode}`;\n    } catch {\n      onlineStatus.textContent = link;\n    }\n  });\n  multiplayerButton.addEventListener(\"click\", () => {\n    startPanel.classList.add(\"hidden\");\n    resetMultiplayer();\n  });\n  restartButton.addEventListener(\"click\", () => {\n    endPanel.classList.add(\"hidden\");\n    if (online.enabled) {\n      resetOnlineRoom();\n    } else if (gameMode === \"multi\") {\n      resetMultiplayer();\n    } else {\n      beginCutscene(INTRO_SCENES, resetGame);\n    }\n  });\n  nextCutsceneButton.addEventListener(\"click\", advanceCutscene);\n  skipCutsceneButton.addEventListener(\"click\", endCutscene);\n\n  resetObjects();\n  playerNameInput.value = localStorage.getItem(\"whiskerDetectiveName\") || \"\";\n  const roomFromUrl = cleanRoomCode(new URLSearchParams(window.location.search).get(\"room\"));\n  if (roomFromUrl) {\n    roomCodeInput.value = roomFromUrl;\n    onlineLobby.classList.remove(\"hidden\");\n    setLobbyStatus(`Room ${roomFromUrl} is ready. Add your name and join.`);\n  }\n  drawPortrait();\n  updateHud();\n  requestAnimationFrame(loop);\n})();\n"};
+const W = 320;
+const GROUND = 150;
+const GRAVITY = 0.36;
+const ROOM_TTL_MS = 1000 * 60 * 60 * 3;
+const PLAYER_TTL_MS = 1000 * 60 * 8;
+const MEMORY_ROOMS = new Map();
+
+const MYSTERIES = [
+  {
+    id: "Case P-17",
+    culprit: "Alley Pigeon",
+    suspects: [
+      ["Alley Pigeon", "breadcrumb syndicate runner"],
+      ["Buster", "nervous gate dog"],
+      ["Madame Parrot", "opera mimic"],
+      ["Mittens", "jealous window cat"],
+    ],
+    motive: "Sir Reginald learned the downtown breadcrumb route.",
+    reveals: {
+      trail: "Barnaby: green feather oil, but no cage dust. The bird was carried outside.",
+      floor: "Ink exposes a hidden seam packed with breadcrumb dust.",
+      note: "Cleo reads: Garden gate. 3 AM. Bring feathers.",
+      scent: "Barnaby smells peanut butter used as payment, plus wet pigeon down.",
+    },
+    win: "The Alley Pigeon cracks. Sir Reginald witnessed the breadcrumb syndicate moving through Milkglass Manor.",
+  },
+  {
+    id: "Case B-04",
+    culprit: "Buster",
+    suspects: [
+      ["Buster", "nervous gate dog"],
+      ["Alley Pigeon", "breadcrumb syndicate runner"],
+      ["Madame Parrot", "opera mimic"],
+      ["Mittens", "jealous window cat"],
+    ],
+    motive: "The canary knew Buster chewed the owner's victory slippers.",
+    reveals: {
+      trail: "Barnaby: oily feathers drag low, exactly at bulldog nose height.",
+      floor: "Ink reveals a paw-scuffed compartment under the rug.",
+      note: "Cleo reads: Bring feathers, or the slipper secret sings.",
+      scent: "Barnaby smells dog shampoo, cheap peanut butter, and pure panic.",
+    },
+    win: "Buster confesses between hiccuping barks. The canary was hidden as blackmail protection.",
+  },
+  {
+    id: "Case M-22",
+    culprit: "Madame Parrot",
+    suspects: [
+      ["Madame Parrot", "opera mimic"],
+      ["Mittens", "jealous window cat"],
+      ["Buster", "nervous gate dog"],
+      ["Alley Pigeon", "breadcrumb syndicate runner"],
+    ],
+    motive: "Sir Reginald stole her thunder by singing the aria first.",
+    reveals: {
+      trail: "Barnaby: the feather trail smells like perfume, polish, and stage fright.",
+      floor: "Ink seeps into a compartment lined with torn sheet music.",
+      note: "Cleo reads: No encore for the yellow soprano.",
+      scent: "Barnaby catches birdseed, violet perfume, and fake bulldog shampoo.",
+    },
+    win: "Madame Parrot repeats the confession in three voices. Sir Reginald was stashed backstage in the pantry.",
+  },
+];
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    try {
+      if (url.pathname.startsWith("/api/")) {
+        return await handleApi(request, env, url);
+      }
+      return serveAsset(url.pathname);
+    } catch (error) {
+      return json({ error: error?.message || "The manor lost the trail." }, error?.status || 500);
+    }
+  },
+};
+
+function serveAsset(pathname) {
+  if (pathname === "/" || pathname === "/index.html") {
+    return new Response(ASSETS.html, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+  if (pathname === "/style.css") {
+    return new Response(ASSETS.css, {
+      headers: {
+        "Content-Type": "text/css; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+  if (pathname === "/game.js") {
+    return new Response(ASSETS.js, {
+      headers: {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+  return new Response(ASSETS.html, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+async function handleApi(request, env, url) {
+  if (request.method === "OPTIONS") return json({});
+  if (url.pathname === "/api/rooms" && request.method === "POST") {
+    return createRoom(request, env);
+  }
+
+  const match = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{4,6})(?:\/([a-z]+))?$/i);
+  if (!match) return json({ error: "Unknown room route." }, 404);
+
+  const code = match[1].toUpperCase();
+  const action = match[2] || "";
+  if (request.method === "GET" && !action) {
+    const room = await requireRoom(env, code);
+    stepRoom(room);
+    await saveRoom(env, room);
+    return json({ state: snapshot(room, "") });
+  }
+  if (request.method !== "POST") return json({ error: "Use the game buttons for this route." }, 405);
+
+  if (action === "join") return joinRoom(request, env, code);
+  if (action === "input") return updateInput(request, env, code);
+  if (action === "accuse") return accuse(request, env, code);
+  if (action === "reset") return resetRoom(request, env, code);
+  return json({ error: "Unknown room action." }, 404);
+}
+
+async function createRoom(request, env) {
+  const body = await readJson(request);
+  await pruneOldRooms(env);
+  let code = randomCode();
+  for (let i = 0; i < 20 && (await loadRoom(env, code)); i += 1) {
+    code = randomCode();
+  }
+  const playerId = randomId();
+  const room = newRoom(code, playerId, body.name);
+  await saveRoom(env, room);
+  return json(joinPayload(room, playerId));
+}
+
+async function joinRoom(request, env, code) {
+  const body = await readJson(request);
+  const room = await requireRoom(env, code);
+  stepRoom(room);
+  prunePlayers(room);
+  let playerId = String(body.playerId || "");
+  let player = room.players.find((candidate) => candidate.id === playerId);
+  if (!player) {
+    if (room.players.length >= 8) {
+      return json({ error: "This room is full. Create another manor." }, 409);
+    }
+    playerId = randomId();
+    const slot = nextSlot(room);
+    player = {
+      id: playerId,
+      name: cleanName(body.name),
+      slot,
+      role: roleForSlot(slot),
+      lastSeen: Date.now(),
+      input: { left: false, right: false },
+    };
+    room.players.push(player);
+  } else {
+    player.name = cleanName(body.name);
+    player.lastSeen = Date.now();
+  }
+  await saveRoom(env, room);
+  return json(joinPayload(room, playerId));
+}
+
+async function updateInput(request, env, code) {
+  const body = await readJson(request);
+  const room = await requireRoom(env, code);
+  const player = requirePlayer(room, body.playerId);
+  player.lastSeen = Date.now();
+  player.input = {
+    left: Boolean(body.input?.left),
+    right: Boolean(body.input?.right),
+  };
+  for (const action of Array.isArray(body.actions) ? body.actions.slice(0, 8) : []) {
+    processAction(room, player, action);
+  }
+  stepRoom(room);
+  await saveRoom(env, room);
+  return json(joinPayload(room, player.id));
+}
+
+async function accuse(request, env, code) {
+  const body = await readJson(request);
+  const room = await requireRoom(env, code);
+  const player = requirePlayer(room, body.playerId);
+  player.lastSeen = Date.now();
+  stepRoom(room);
+  const clueCount = ["trail", "floor", "note", "scent"].filter((key) => room.evidence[key]).length;
+  if (clueCount < 4) {
+    room.message = "Four clues first. The board refuses to guess.";
+  } else if (room.status !== "ended") {
+    const suspect = String(body.suspect || "");
+    room.evidence.buster = true;
+    if (suspect === room.mystery.culprit) {
+      finish(room, true, "Online case closed", room.mystery.win);
+    } else {
+      room.evidence.buster = false;
+      addChaos(room, 22, `${suspect || "Someone"} is innocent. The real culprit keeps moving.`);
+    }
+  }
+  await saveRoom(env, room);
+  return json(joinPayload(room, player.id));
+}
+
+async function resetRoom(request, env, code) {
+  const body = await readJson(request);
+  const room = await requireRoom(env, code);
+  const player = requirePlayer(room, body.playerId);
+  const players = room.players.map((p) => ({
+    ...p,
+    lastSeen: p.id === player.id ? Date.now() : p.lastSeen,
+    input: { left: false, right: false },
+  }));
+  const fresh = newRoom(code, players[0]?.id || player.id, players[0]?.name || player.name);
+  fresh.players = players;
+  await saveRoom(env, fresh);
+  return json(joinPayload(fresh, player.id));
+}
+
+function newRoom(code, hostId, hostName) {
+  const mystery = MYSTERIES[Math.floor(Math.random() * MYSTERIES.length)];
+  const now = Date.now();
+  return {
+    code,
+    status: "playing",
+    createdAt: now,
+    updatedAt: now,
+    lastTick: now,
+    time: 300,
+    chaos: 0,
+    swats: 0,
+    broken: 0,
+    message: "Two detectives. One liar. The manor starts sweating.",
+    mystery,
+    evidence: {
+      trail: false,
+      floor: false,
+      note: false,
+      scent: false,
+      buster: false,
+    },
+    players: [
+      {
+        id: hostId,
+        name: cleanName(hostName),
+        slot: 0,
+        role: roleForSlot(0),
+        lastSeen: now,
+        input: { left: false, right: false },
+      },
+    ],
+    actors: [
+      {
+        cat: "barnaby",
+        x: 35,
+        y: GROUND - 22,
+        vx: 0,
+        vy: 0,
+        w: 26,
+        h: 22,
+        facing: 1,
+        onGround: false,
+        step: 0,
+        sense: false,
+        cooldown: 0,
+      },
+      {
+        cat: "cleo",
+        x: 64,
+        y: GROUND - 21,
+        vx: 0,
+        vy: 0,
+        w: 24,
+        h: 21,
+        facing: 1,
+        onGround: false,
+        step: 0,
+        sense: false,
+        cooldown: 0,
+      },
+    ],
+    curtain: {
+      x: 247,
+      y: 33,
+      w: 45,
+      h: 86,
+      hp: 3,
+      falling: false,
+      fallen: false,
+      vy: 0,
+    },
+    objects: initialObjects(),
+    end: null,
+  };
+}
+
+function initialObjects() {
+  return [
+    object("ink", "ink bottle", "bottle", 102, 88, 11, 15, false, true),
+    object("vase", "crystal vase", "vase", 144, 83, 13, 20, true, false),
+    object("clock", "clock pendulum", "pendulum", 35, 76, 9, 36, true, false),
+    object("book1", "ledger", "book", 203, 97, 14, 6, false, false),
+    object("book2", "atlas", "book", 217, 91, 16, 7, false, false),
+  ];
+}
+
+function object(id, name, type, x, y, w, h, precious, clue) {
+  return { id, name, type, x, y, w, h, vx: 0, vy: 0, dynamic: false, broken: false, precious, clue };
+}
+
+function stepRoom(room) {
+  const now = Date.now();
+  const elapsed = Math.min((now - (room.lastTick || now)) / 1000, 0.25);
+  room.lastTick = now;
+  room.updatedAt = now;
+  if (elapsed <= 0 || room.status === "ended") return;
+
+  const steps = Math.ceil(elapsed / 0.033);
+  const dt = elapsed / steps;
+  for (let i = 0; i < steps; i += 1) {
+    room.time -= dt;
+    if (room.time <= 0) {
+      room.time = 0;
+      finish(room, false, "The humans are home", "The owner stepped into the study before the detectives could name the culprit.");
+      return;
+    }
+    moveActor(room, 0, dt);
+    moveActor(room, 1, dt);
+    updateObjects(room, dt);
+    inspectRoom(room);
+  }
+}
+
+function moveActor(room, slot, dt) {
+  const actor = room.actors[slot];
+  const controller = room.players.find((player) => player.slot === slot);
+  const input = controller?.input || {};
+  const acceleration = slot === 0 ? 0.44 : 0.52;
+  const maxSpeed = slot === 0 ? 2.1 : 2.35;
+  if (input.left) {
+    actor.vx -= acceleration;
+    actor.facing = -1;
+  }
+  if (input.right) {
+    actor.vx += acceleration;
+    actor.facing = 1;
+  }
+  if (!input.left && !input.right) actor.vx *= 0.78;
+  actor.vx = clamp(actor.vx, -maxSpeed, maxSpeed);
+  actor.vy += GRAVITY;
+  actor.x += actor.vx;
+  actor.y += actor.vy;
+  actor.x = clamp(actor.x, 10, W - actor.w - 10);
+  collideFurniture(actor);
+  if (actor.y + actor.h >= GROUND) {
+    actor.y = GROUND - actor.h;
+    actor.vy = 0;
+    actor.onGround = true;
+  } else {
+    actor.onGround = false;
+  }
+  actor.step += Math.abs(actor.vx) * dt;
+  actor.cooldown = Math.max(0, actor.cooldown - dt);
+}
+
+function processAction(room, player, action) {
+  if (room.status === "ended" || player.slot > 1) return;
+  const actor = room.actors[player.slot];
+  if (action === "jump" && actor.onGround) {
+    actor.vy = -6.1;
+    actor.onGround = false;
+  }
+  if (action === "sense") {
+    actor.sense = !actor.sense;
+    room.message = actor.sense
+      ? `${actor.cat === "barnaby" ? "Barnaby" : "Cleo"} turns sense on.`
+      : `${actor.cat === "barnaby" ? "Barnaby" : "Cleo"} lets the room go quiet.`;
+    inspectRoom(room);
+  }
+  if (action === "swat" && actor.cooldown <= 0) {
+    actor.cooldown = 0.26;
+    swatActor(room, actor);
+  }
+}
+
+function swatActor(room, actor) {
+  room.swats += 1;
+  const paw = {
+    x: actor.facing > 0 ? actor.x + actor.w - 2 : actor.x - 16,
+    y: actor.y + 6,
+    w: 18,
+    h: 12,
+  };
+  let hit = false;
+  for (const obj of room.objects) {
+    if (obj.broken) continue;
+    if (rectsOverlap(paw, obj)) {
+      hit = true;
+      obj.dynamic = true;
+      obj.vx += actor.facing * 2.35;
+      obj.vy -= 1.6;
+      if (obj.precious) addChaos(room, 4, "That sounded expensive.");
+    }
+  }
+  if (!room.curtain.fallen && rectsOverlap(paw, room.curtain)) {
+    hit = true;
+    room.curtain.hp -= 1;
+    if (room.curtain.hp <= 0) {
+      room.curtain.falling = true;
+      markEvidence(room, "trail", "A neon feather trail glows behind the drapes.");
+      addChaos(room, 8, "The curtains surrender.");
+    } else {
+      room.message = "The curtain rings groan.";
+    }
+  }
+  if (!hit) room.message = "A very forensic swat.";
+}
+
+function updateObjects(room) {
+  const curtain = room.curtain;
+  if (curtain.falling && !curtain.fallen) {
+    curtain.vy += 0.5;
+    curtain.y += curtain.vy;
+    if (curtain.y + curtain.h >= GROUND) {
+      curtain.y = GROUND - curtain.h + 18;
+      curtain.fallen = true;
+      curtain.falling = false;
+      const ink = room.objects.find((o) => o.id === "ink" && !o.broken);
+      if (ink) {
+        ink.dynamic = true;
+        ink.vx = -1.9;
+        ink.vy = -2.4;
+      }
+    }
+  }
+  for (const obj of room.objects) {
+    if (obj.broken || !obj.dynamic) continue;
+    obj.vy += GRAVITY;
+    obj.x += obj.vx;
+    obj.y += obj.vy;
+    obj.vx *= 0.985;
+    if (obj.x < 12 || obj.x + obj.w > W - 12) {
+      obj.x = clamp(obj.x, 12, W - obj.w - 12);
+      obj.vx *= -0.45;
+    }
+    if (obj.y + obj.h >= GROUND) {
+      obj.y = GROUND - obj.h;
+      obj.vy *= -0.26;
+      obj.vx *= 0.78;
+      if (Math.abs(obj.vy) < 0.7) obj.vy = 0;
+      if (obj.id === "ink" && !room.evidence.floor) {
+        obj.broken = true;
+        room.broken += 1;
+        markEvidence(room, "floor", "Black ink drains into a hidden floorboard seam.");
+      } else if (obj.precious && Math.abs(obj.vx) > 0.9) {
+        obj.broken = true;
+        room.broken += 1;
+        addChaos(room, obj.id === "vase" ? 23 : 16, `${obj.name} becomes evidence-adjacent.`);
+      }
+    }
+  }
+}
+
+function inspectRoom(room) {
+  const barnaby = room.actors[0];
+  const cleo = room.actors[1];
+  const barnabyX = barnaby.x + barnaby.w / 2;
+  const cleoX = cleo.x + cleo.w / 2;
+  if (barnaby.sense) {
+    if (Math.abs(barnabyX - 266) < 52 && !room.evidence.trail) {
+      markEvidence(room, "trail", "Barnaby finds a feather trail that refuses to behave.");
+    }
+    if (room.evidence.floor && Math.abs(barnabyX - 151) < 38 && !room.evidence.scent) {
+      markEvidence(room, "scent", "Barnaby matches the odor to a suspect.");
+    }
+  }
+  if (cleo.sense && room.evidence.floor && Math.abs(cleoX - 146) < 38 && !room.evidence.note) {
+    markEvidence(room, "note", "Cleo reads the note the floor tried to swallow.");
+  }
+}
+
+function markEvidence(room, key, text) {
+  if (room.evidence[key]) return;
+  room.evidence[key] = true;
+  room.message = room.mystery.reveals[key] || text;
+}
+
+function addChaos(room, amount, reason) {
+  room.chaos = clamp(room.chaos + amount, 0, 100);
+  if (reason) room.message = reason;
+  if (room.chaos >= 100) {
+    finish(room, false, "Bathroom jail", "The manor solved only one mystery: who destroyed the study.");
+  }
+}
+
+function finish(room, won, chip, copy) {
+  room.status = "ended";
+  room.end = {
+    won,
+    chip,
+    title: won ? "Sir Reginald is saved." : "The trail goes cold.",
+    copy: `${copy} Security cam recap: ${room.swats} swats, ${room.broken} broken objects, ${Math.round(room.chaos)}% chaos.`,
+  };
+  room.message = won ? "Case closed. The bird sings again." : "The trail goes cold.";
+}
+
+function snapshot(room, playerId) {
+  const mystery = {
+    id: room.mystery.id,
+    suspects: room.mystery.suspects,
+    motive: room.mystery.motive,
+  };
+  return {
+    code: room.code,
+    status: room.status,
+    time: room.time,
+    chaos: room.chaos,
+    swats: room.swats,
+    broken: room.broken,
+    message: room.message,
+    mystery,
+    evidence: room.evidence,
+    players: room.players.map((player) => ({
+      name: player.name,
+      role: player.role,
+      slot: player.slot,
+      you: player.id === playerId,
+    })),
+    actors: room.actors,
+    curtain: room.curtain,
+    objects: room.objects,
+    end: room.end,
+  };
+}
+
+function joinPayload(room, playerId) {
+  const player = room.players.find((candidate) => candidate.id === playerId);
+  return {
+    roomCode: room.code,
+    playerId,
+    slot: player?.slot ?? 2,
+    role: player?.role ?? "Clue Board",
+    state: snapshot(room, playerId),
+  };
+}
+
+async function loadRoom(env, code) {
+  if (env.DB) {
+    const row = await env.DB.prepare("SELECT data FROM rooms WHERE code = ?").bind(code).first();
+    return row?.data ? JSON.parse(row.data) : null;
+  }
+  return clone(MEMORY_ROOMS.get(code) || null);
+}
+
+async function requireRoom(env, code) {
+  const room = await loadRoom(env, code);
+  if (!room) {
+    const error = new Error("Room not found. Check the code or create a new room.");
+    error.status = 404;
+    throw error;
+  }
+  return room;
+}
+
+async function saveRoom(env, room) {
+  room.updatedAt = Date.now();
+  if (env.DB) {
+    await env.DB
+      .prepare("INSERT INTO rooms (code, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(code) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")
+      .bind(room.code, JSON.stringify(room), room.updatedAt)
+      .run();
+  } else {
+    MEMORY_ROOMS.set(room.code, clone(room));
+  }
+}
+
+async function pruneOldRooms(env) {
+  const cutoff = Date.now() - ROOM_TTL_MS;
+  if (env.DB) {
+    await env.DB.prepare("DELETE FROM rooms WHERE updated_at < ?").bind(cutoff).run();
+    return;
+  }
+  for (const [code, room] of MEMORY_ROOMS) {
+    if ((room.updatedAt || 0) < cutoff) MEMORY_ROOMS.delete(code);
+  }
+}
+
+function prunePlayers(room) {
+  const cutoff = Date.now() - PLAYER_TTL_MS;
+  room.players = room.players.filter((player, index) => index === 0 || player.lastSeen > cutoff);
+}
+
+function requirePlayer(room, playerId) {
+  const player = room.players.find((candidate) => candidate.id === playerId);
+  if (!player) {
+    const error = new Error("Rejoin the room to keep playing.");
+    error.status = 401;
+    throw error;
+  }
+  return player;
+}
+
+function nextSlot(room) {
+  for (let slot = 0; slot < 8; slot += 1) {
+    if (!room.players.some((player) => player.slot === slot)) return slot;
+  }
+  return room.players.length;
+}
+
+function roleForSlot(slot) {
+  if (slot === 0) return "Barnaby";
+  if (slot === 1) return "Cleo";
+  return `Clue Board ${slot - 1}`;
+}
+
+function cleanName(name) {
+  return String(name || "Guest Detective").replace(/[<>]/g, "").trim().slice(0, 18) || "Guest Detective";
+}
+
+function randomCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+function randomId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function clone(value) {
+  return value ? JSON.parse(JSON.stringify(value)) : value;
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function collideFurniture(actor) {
+  const shelves = [
+    { x: 192, y: 105, w: 53, h: 7 },
+    { x: 75, y: 104, w: 94, h: 9 },
+  ];
+  for (const shelf of shelves) {
+    const next = { x: actor.x, y: actor.y, w: actor.w, h: actor.h };
+    if (rectsOverlap(next, shelf) && actor.vy >= 0 && actor.y + actor.h - actor.vy <= shelf.y + 2) {
+      actor.y = shelf.y - actor.h;
+      actor.vy = 0;
+      actor.onGround = true;
+    }
+  }
+}
+
+async function readJson(request) {
+  return request.json().catch(() => ({}));
+}
+
+function json(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
