@@ -949,6 +949,7 @@
       endChip.textContent = snapshot.end.chip;
       endTitle.textContent = snapshot.end.title;
       endCopy.textContent = snapshot.end.copy;
+      renderEndStats();
       endPanel.classList.remove("hidden");
     } else {
       endPanel.classList.add("hidden");
@@ -1068,6 +1069,12 @@
     clueToast.classList.add("visible");
     clearTimeout(clueToastTimer);
     clueToastTimer = setTimeout(() => clueToast.classList.remove("visible"), 4200);
+  }
+
+  function renderEndStats() {
+    const clues = Object.values(state.evidence).filter(Boolean).length;
+    const score = Math.max(0, clues * 250 + Math.floor(state.time) * 2 - Math.round(state.chaos) * 3);
+    endStats.innerHTML = `<span>Score ${score}</span><span>${clues}/5 clues</span><span>${state.swats} swats</span><span>${Math.round(state.chaos)}% chaos</span>`;
   }
 
   function addParticles(x, y, count, color, spread = 1.6) {
@@ -1484,8 +1491,7 @@
     endChip.textContent = chip;
     endTitle.textContent = won ? "Sir Reginald is saved." : "The trail goes cold.";
     endCopy.textContent = `${copy} Security cam recap: ${state.swats} swats, ${state.broken} broken objects, ${Math.round(state.chaos)}% chaos.`;
-    const clues = Object.values(state.evidence).filter(Boolean).length;
-    endStats.innerHTML = `<span>${clues}/5 clues</span><span>${state.swats} swats</span><span>${state.broken} objects broken</span><span>${Math.round(state.chaos)}% chaos</span>`;
+    renderEndStats();
     endPanel.classList.remove("hidden");
   }
 
