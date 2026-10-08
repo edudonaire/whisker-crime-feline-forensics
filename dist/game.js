@@ -7,6 +7,7 @@
 
   const startPanel = document.getElementById("startPanel");
   const startButton = document.getElementById("startButton");
+  const multiplayerButton = document.getElementById("multiplayerButton");
   const endPanel = document.getElementById("endPanel");
   const endChip = document.getElementById("endChip");
   const endTitle = document.getElementById("endTitle");
@@ -25,6 +26,11 @@
   const detectiveName = document.getElementById("detectiveName");
   const senseCopy = document.getElementById("senseCopy");
   const evidenceList = document.getElementById("evidenceList");
+  const whodunitPanel = document.getElementById("whodunitPanel");
+  const mysterySeed = document.getElementById("mysterySeed");
+  const whodunitStatus = document.getElementById("whodunitStatus");
+  const suspectGrid = document.getElementById("suspectGrid");
+  const accuseButtons = document.getElementById("accuseButtons");
 
   const W = 320;
   const H = 180;
@@ -59,11 +65,15 @@
   };
 
   let lastTime = 0;
+  let gameMode = "story";
   let started = false;
   let ended = false;
   let activeCat = "barnaby";
   let senseOn = false;
+  let barnabySense = false;
+  let cleoSense = false;
   let swatCooldown = 0;
+  let cleoSwatCooldown = 0;
   let sensePulse = 0;
   let sceneShake = 0;
   let lightningFlash = 0;
@@ -74,6 +84,7 @@
   let cutsceneQueue = [];
   let cutsceneIndex = 0;
   let cutsceneDone = null;
+  let currentMystery = null;
 
   const state = {
     time: 240,
@@ -168,6 +179,79 @@
     ],
   };
 
+  const MYSTERIES = [
+    {
+      id: "Case P-17",
+      culprit: "Alley Pigeon",
+      suspects: [
+        ["Alley Pigeon", "breadcrumb syndicate runner"],
+        ["Buster", "nervous gate dog"],
+        ["Madame Parrot", "opera mimic"],
+        ["Mittens", "jealous window cat"],
+      ],
+      motive: "Sir Reginald learned the downtown breadcrumb route.",
+      reveals: {
+        trail: "Barnaby: green feather oil, but no cage dust. The bird was carried outside.",
+        floor: "Ink exposes a hidden seam packed with breadcrumb dust.",
+        note: "Cleo reads: Garden gate. 3 AM. Bring feathers.",
+        scent: "Barnaby smells peanut butter used as payment, plus wet pigeon down.",
+      },
+      win: "The Alley Pigeon cracks. Sir Reginald witnessed the breadcrumb syndicate moving through Milkglass Manor.",
+    },
+    {
+      id: "Case B-04",
+      culprit: "Buster",
+      suspects: [
+        ["Buster", "nervous gate dog"],
+        ["Alley Pigeon", "breadcrumb syndicate runner"],
+        ["Madame Parrot", "opera mimic"],
+        ["Mittens", "jealous window cat"],
+      ],
+      motive: "The canary knew Buster chewed the owner's victory slippers.",
+      reveals: {
+        trail: "Barnaby: oily feathers drag low, exactly at bulldog nose height.",
+        floor: "Ink reveals a paw-scuffed compartment under the rug.",
+        note: "Cleo reads: Bring feathers, or the slipper secret sings.",
+        scent: "Barnaby smells dog shampoo, cheap peanut butter, and pure panic.",
+      },
+      win: "Buster confesses between hiccuping barks. The canary was hidden as blackmail protection.",
+    },
+    {
+      id: "Case M-22",
+      culprit: "Madame Parrot",
+      suspects: [
+        ["Madame Parrot", "opera mimic"],
+        ["Mittens", "jealous window cat"],
+        ["Buster", "nervous gate dog"],
+        ["Alley Pigeon", "breadcrumb syndicate runner"],
+      ],
+      motive: "Sir Reginald stole her thunder by singing the aria first.",
+      reveals: {
+        trail: "Barnaby: the feather trail smells like perfume, polish, and stage fright.",
+        floor: "Ink seeps into a compartment lined with torn sheet music.",
+        note: "Cleo reads: No encore for the yellow soprano.",
+        scent: "Barnaby catches birdseed, violet perfume, and fake bulldog shampoo.",
+      },
+      win: "Madame Parrot repeats the confession in three voices. Sir Reginald was stashed backstage in the pantry.",
+    },
+  ];
+
+  const STORY_LABELS = {
+    trail: "Find the canary trail",
+    floor: "Expose the floorboard compartment",
+    note: "Read the hidden note",
+    scent: "Identify the peanut-butter scent",
+    buster: "Crack Buster's story",
+  };
+
+  const MULTI_LABELS = {
+    trail: "P1 scent: track the feather trail",
+    floor: "Break the room open for a hidden compartment",
+    note: "P2 whiskers: read the secret note",
+    scent: "P1 scent: match the culprit's odor",
+    buster: "Vote together and accuse the culprit",
+  };
+
   const player = {
     x: 38,
     y: GROUND - 22,
@@ -175,6 +259,18 @@
     vy: 0,
     w: 26,
     h: 22,
+    facing: 1,
+    onGround: false,
+    step: 0,
+  };
+
+  const player2 = {
+    x: 64,
+    y: GROUND - 22,
+    vx: 0,
+    vy: 0,
+    w: 24,
+    h: 21,
     facing: 1,
     onGround: false,
     step: 0,
@@ -270,17 +366,28 @@
     vy: 0,
   };
 
+  function setEvidenceLabels(labels) {
+    [...evidenceList.children].forEach((item) => {
+      item.textContent = labels[item.dataset.key] || item.textContent;
+    });
+  }
+
   function resetGame() {
+    gameMode = "story";
     started = true;
     ended = false;
     activeCat = "barnaby";
     senseOn = false;
+    barnabySense = false;
+    cleoSense = false;
     swatCooldown = 0;
+    cleoSwatCooldown = 0;
     sensePulse = 0;
     sceneShake = 0;
     lightningFlash = 0.45;
     lightningTimer = 1.2;
     solved = false;
+    currentMystery = null;
     state.time = 240;
     state.chaos = 0;
     state.swats = 0;
@@ -295,6 +402,15 @@
     state.message = "The canary cage is empty. Barnaby smells trouble.";
     Object.assign(player, {
       x: 38,
+      y: GROUND - 22,
+      vx: 0,
+      vy: 0,
+      facing: 1,
+      onGround: false,
+      step: 0,
+    });
+    Object.assign(player2, {
+      x: 64,
       y: GROUND - 22,
       vx: 0,
       vy: 0,
@@ -320,6 +436,91 @@
     endPanel.classList.add("hidden");
     cutscene.classList.add("hidden");
     screenWrap.classList.remove("cinematic");
+    whodunitPanel.classList.add("hidden");
+    setEvidenceLabels(STORY_LABELS);
+    updateHud();
+  }
+
+  function resetMultiplayer() {
+    gameMode = "multi";
+    started = true;
+    ended = false;
+    activeCat = "barnaby";
+    senseOn = false;
+    barnabySense = false;
+    cleoSense = false;
+    swatCooldown = 0;
+    cleoSwatCooldown = 0;
+    sensePulse = 0;
+    sceneShake = 0;
+    lightningFlash = 0.55;
+    lightningTimer = 1;
+    solved = false;
+    currentMystery = MYSTERIES[Math.floor(Math.random() * MYSTERIES.length)];
+    state.time = 300;
+    state.chaos = 0;
+    state.swats = 0;
+    state.broken = 0;
+    state.evidence = {
+      trail: false,
+      floor: false,
+      note: false,
+      scent: false,
+      buster: false,
+    };
+    state.message = "Two detectives. One liar. The manor starts sweating.";
+    Object.assign(player, {
+      x: 35,
+      y: GROUND - 22,
+      vx: 0,
+      vy: 0,
+      facing: 1,
+      onGround: false,
+      step: 0,
+    });
+    Object.assign(player2, {
+      x: 64,
+      y: GROUND - 22,
+      vx: 0,
+      vy: 0,
+      facing: 1,
+      onGround: false,
+      step: 0,
+    });
+    Object.assign(curtain, {
+      x: 247,
+      y: 33,
+      w: 45,
+      h: 86,
+      hp: 3,
+      falling: false,
+      fallen: false,
+      vy: 0,
+    });
+    pulses.length = 0;
+    particles.length = 0;
+    floaters.length = 0;
+    resetObjects();
+    startPanel.classList.add("hidden");
+    endPanel.classList.add("hidden");
+    cutscene.classList.add("hidden");
+    screenWrap.classList.remove("cinematic");
+    whodunitPanel.classList.remove("hidden");
+    setEvidenceLabels(MULTI_LABELS);
+    renderWhodunit();
+    beginCutscene(
+      [
+        {
+          kicker: "Co-op whodunit",
+          title: "One manor. Two noses. Four suspects.",
+          copy:
+            "Barnaby sees what glows. Cleo hears what lies. This time the culprit is shuffled, so every run needs a fresh accusation.",
+          objective: "P1: A/D/W/F/E. P2: arrows/K/L. Collect clues, then accuse together.",
+          cta: "Investigate",
+        },
+      ],
+      null
+    );
     updateHud();
   }
 
@@ -383,6 +584,84 @@
     });
   }
 
+  function multiplayerBeat(key, text) {
+    if (key === "buster") return;
+    const doneCount = Object.values(state.evidence).filter(Boolean).length;
+    beginCutscene(
+      [
+        {
+          kicker: `Co-op clue ${Math.min(doneCount, 4)}/4`,
+          title: key === "trail" ? "The trail changes." : key === "floor" ? "The room confesses." : key === "note" ? "The note bites back." : "The smell narrows.",
+          copy: text,
+          objective:
+            doneCount >= 4
+              ? "Enough evidence. Pick a suspect from the Whodunit board."
+              : "Keep splitting senses. One cat cannot solve this alone.",
+          cta: "Continue",
+        },
+      ],
+      null
+    );
+  }
+
+  function renderWhodunit() {
+    if (!currentMystery) return;
+    mysterySeed.textContent = currentMystery.id;
+    const clueCount = ["trail", "floor", "note", "scent"].filter((key) => state.evidence[key]).length;
+    suspectGrid.innerHTML = currentMystery.suspects
+      .map(([name, role]) => `<div class="suspect-card"><strong>${name}</strong><span>${role}</span></div>`)
+      .join("");
+    accuseButtons.innerHTML = currentMystery.suspects
+      .map(([name]) => `<button type="button" data-suspect="${name}" ${clueCount < 4 || ended ? "disabled" : ""}>Accuse ${name}</button>`)
+      .join("");
+    whodunitStatus.textContent =
+      clueCount < 4
+        ? `${clueCount}/4 clues locked. Culprit motive: ${currentMystery.motive}`
+        : "Evidence is ready. Choose carefully: one accusation closes the case.";
+    accuseButtons.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", () => accuse(button.dataset.suspect));
+    });
+  }
+
+  function accuse(name) {
+    if (ended || gameMode !== "multi" || !currentMystery) return;
+    state.evidence.buster = true;
+    renderWhodunit();
+    if (name === currentMystery.culprit) {
+      beginCutscene(
+        [
+          {
+            kicker: "Final accusation",
+            title: `${name} did it.`,
+            copy: currentMystery.win,
+            objective: "Co-op solved. The security cam is already embarrassing.",
+            cta: "Close Case",
+          },
+        ],
+        () => finish(true, "Co-op case closed", `${currentMystery.win}`)
+      );
+    } else {
+      addChaos(22, "Wrong accusation. The house gets louder.");
+      if (ended) return;
+      beginCutscene(
+        [
+          {
+            kicker: "Bad accusation",
+            title: `${name} hisses innocent.`,
+            copy: `The clue board does not line up. ${currentMystery.culprit} is still using the storm as cover.`,
+            objective: "Review the clue text and accuse again before chaos hits 100%.",
+            cta: "Keep Playing",
+          },
+        ],
+        () => {
+          state.evidence.buster = false;
+          renderWhodunit();
+        }
+      );
+    }
+    updateHud();
+  }
+
   function rectsOverlap(a, b) {
     return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
@@ -423,13 +702,22 @@
     }
   }
 
-  function markEvidence(key, text) {
+  function markEvidence(key, text, actor = player) {
     if (state.evidence[key]) return;
     state.evidence[key] = true;
-    setMessage(text, player.x - 14, player.y - 14, colors.green);
-    addParticles(player.x + player.w / 2, player.y + 8, 18, colors.green, 2.3);
-    pulse(player.x + player.w / 2, player.y + 10, colors.green);
-    if (STORY_BEATS[key]) storyBeat(key);
+    const shownText =
+      gameMode === "multi" && currentMystery?.reveals[key]
+        ? currentMystery.reveals[key]
+        : text;
+    setMessage(shownText, actor.x - 14, actor.y - 14, colors.green);
+    addParticles(actor.x + actor.w / 2, actor.y + 8, 18, colors.green, 2.3);
+    pulse(actor.x + actor.w / 2, actor.y + 10, colors.green);
+    if (gameMode === "multi") {
+      multiplayerBeat(key, shownText);
+      renderWhodunit();
+    } else if (STORY_BEATS[key]) {
+      storyBeat(key);
+    }
     updateHud();
   }
 
@@ -447,6 +735,10 @@
   }
 
   function toggleSense() {
+    if (gameMode === "multi") {
+      toggleBarnabySense();
+      return;
+    }
     senseOn = !senseOn;
     sensePulse = 0.5;
     pulse(player.x + player.w / 2, player.y + 10, activeCat === "barnaby" ? colors.blue : colors.amber);
@@ -454,22 +746,59 @@
     inspectNearby();
   }
 
+  function toggleBarnabySense() {
+    barnabySense = !barnabySense;
+    sensePulse = 0.5;
+    pulse(player.x + player.w / 2, player.y + 10, colors.blue);
+    setMessage(barnabySense ? "Barnaby's scent sight is live." : "Barnaby blinks the scent away.", player.x - 10, player.y - 12, colors.blue);
+    inspectMultiplayer();
+    updateHud();
+  }
+
+  function toggleCleoSense() {
+    cleoSense = !cleoSense;
+    sensePulse = 0.5;
+    pulse(player2.x + player2.w / 2, player2.y + 10, colors.amber);
+    setMessage(cleoSense ? "Cleo hears the walls breathe." : "Cleo lowers her whiskers.", player2.x - 10, player2.y - 12, colors.amber);
+    inspectMultiplayer();
+    updateHud();
+  }
+
   function jump() {
     if (!started || ended || cutsceneActive) return;
-    if (player.onGround) {
-      player.vy = -6.1;
-      player.onGround = false;
-      addParticles(player.x + player.w / 2, player.y + player.h, 5, "#80604a", 1);
+    jumpActor(player);
+  }
+
+  function jumpCleo() {
+    if (!started || ended || cutsceneActive) return;
+    jumpActor(player2);
+  }
+
+  function jumpActor(actor) {
+    if (actor.onGround) {
+      actor.vy = -6.1;
+      actor.onGround = false;
+      addParticles(actor.x + actor.w / 2, actor.y + actor.h, 5, "#80604a", 1);
     }
   }
 
   function swat() {
     if (!started || ended || cutsceneActive || swatCooldown > 0) return;
     swatCooldown = 0.26;
+    swatActor(player);
+  }
+
+  function swatCleo() {
+    if (!started || ended || cutsceneActive || cleoSwatCooldown > 0) return;
+    cleoSwatCooldown = 0.26;
+    swatActor(player2);
+  }
+
+  function swatActor(actor) {
     state.swats += 1;
     const paw = {
-      x: player.facing > 0 ? player.x + player.w - 2 : player.x - 16,
-      y: player.y + 6,
+      x: actor.facing > 0 ? actor.x + actor.w - 2 : actor.x - 16,
+      y: actor.y + 6,
       w: 18,
       h: 12,
     };
@@ -480,7 +809,7 @@
       if (rectsOverlap(paw, obj)) {
         hit = true;
         obj.dynamic = true;
-        obj.vx += player.facing * (2.2 + Math.random() * 0.5);
+        obj.vx += actor.facing * (2.2 + Math.random() * 0.5);
         obj.vy -= 1.6;
         sceneShake = Math.max(sceneShake, 3);
         addParticles(obj.x + obj.w / 2, obj.y + obj.h / 2, 8, colors.amber, 2.1);
@@ -495,7 +824,7 @@
       addParticles(curtain.x + 12, curtain.y + 8 + curtain.hp * 18, 9, "#8c2d35", 1.8);
       if (curtain.hp <= 0) {
         curtain.falling = true;
-        markEvidence("trail", "A neon feather trail glows behind the drapes.");
+        markEvidence("trail", "A neon feather trail glows behind the drapes.", actor);
         addChaos(8, "The curtains surrender.");
       } else {
         setMessage("The curtain rings groan.", curtain.x - 30, curtain.y + 20, colors.amber);
@@ -504,7 +833,7 @@
 
     if (!hit) {
       addParticles(paw.x + paw.w / 2, paw.y + 8, 5, colors.paper, 1.4);
-      setMessage("A very forensic swat.", player.x - 8, player.y - 10, colors.paper);
+      setMessage("A very forensic swat.", actor.x - 8, actor.y - 10, colors.paper);
     }
   }
 
@@ -526,12 +855,33 @@
     }
   }
 
+  function inspectMultiplayer() {
+    if (gameMode !== "multi" || !started || ended || cutsceneActive) return;
+    const barnabyX = player.x + player.w / 2;
+    const cleoX = player2.x + player2.w / 2;
+    if (barnabySense) {
+      if (Math.abs(barnabyX - 266) < 52 && !state.evidence.trail) {
+        markEvidence("trail", "Barnaby finds a feather trail that refuses to behave.", player);
+      }
+      if (state.evidence.floor && Math.abs(barnabyX - 151) < 38 && !state.evidence.scent) {
+        markEvidence("scent", "Barnaby matches the odor to a suspect.", player);
+      }
+    }
+    if (cleoSense && state.evidence.floor && Math.abs(cleoX - 146) < 38 && !state.evidence.note) {
+      markEvidence("note", "Cleo reads the note the floor tried to swallow.", player2);
+    }
+  }
+
   function update(dt) {
     updateStorm(dt);
     if (!started || ended || cutsceneActive) return;
     state.time -= dt;
     if (state.time <= 0) {
       finish(false, "The humans are home", "The owner stepped into the study before Barnaby could name the culprit. The canary remains a cold case.");
+      return;
+    }
+    if (gameMode === "multi") {
+      updateMultiplayer(dt);
       return;
     }
 
@@ -577,6 +927,45 @@
     updateHud();
   }
 
+  function updateMultiplayer(dt) {
+    moveActor(player, keys.has("a") || keys.has("A"), keys.has("d") || keys.has("D"), 0.44, 2.1, dt);
+    moveActor(player2, keys.has("ArrowLeft"), keys.has("ArrowRight"), 0.52, 2.35, dt);
+    swatCooldown = Math.max(0, swatCooldown - dt);
+    cleoSwatCooldown = Math.max(0, cleoSwatCooldown - dt);
+    sensePulse = Math.max(0, sensePulse - dt);
+    updateObjects(dt);
+    updateEffects(dt);
+    inspectMultiplayer();
+    renderWhodunit();
+    updateHud();
+  }
+
+  function moveActor(actor, left, right, acceleration, maxSpeed, dt) {
+    if (left) {
+      actor.vx -= acceleration;
+      actor.facing = -1;
+    }
+    if (right) {
+      actor.vx += acceleration;
+      actor.facing = 1;
+    }
+    if (!left && !right) actor.vx *= 0.78;
+    actor.vx = clamp(actor.vx, -maxSpeed, maxSpeed);
+    actor.vy += GRAVITY;
+    actor.x += actor.vx;
+    actor.y += actor.vy;
+    actor.x = clamp(actor.x, 10, W - actor.w - 10);
+    collideFurniture(actor);
+    if (actor.y + actor.h >= GROUND) {
+      actor.y = GROUND - actor.h;
+      actor.vy = 0;
+      actor.onGround = true;
+    } else {
+      actor.onGround = false;
+    }
+    actor.step += Math.abs(actor.vx) * dt;
+  }
+
   function updateStorm(dt) {
     lightningTimer -= dt;
     lightningFlash = Math.max(0, lightningFlash - dt * 2.8);
@@ -589,17 +978,17 @@
     sceneShake = Math.max(0, sceneShake - dt * 10);
   }
 
-  function collideFurniture() {
+  function collideFurniture(actor = player) {
     const shelves = [
       { x: 192, y: 105, w: 53, h: 7 },
       { x: 75, y: 104, w: 94, h: 9 },
     ];
     for (const s of shelves) {
-      const next = { x: player.x, y: player.y, w: player.w, h: player.h };
-      if (rectsOverlap(next, s) && player.vy >= 0 && player.y + player.h - player.vy <= s.y + 2) {
-        player.y = s.y - player.h;
-        player.vy = 0;
-        player.onGround = true;
+      const next = { x: actor.x, y: actor.y, w: actor.w, h: actor.h };
+      if (rectsOverlap(next, s) && actor.vy >= 0 && actor.y + actor.h - actor.vy <= s.y + 2) {
+        actor.y = s.y - actor.h;
+        actor.vy = 0;
+        actor.onGround = true;
       }
     }
   }
@@ -701,14 +1090,20 @@
     clockEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     chaosText.textContent = `${Math.round(state.chaos)}%`;
     chaosBar.style.width = `${state.chaos}%`;
-    detectiveName.textContent =
-      activeCat === "barnaby"
-        ? `Barnaby · ${senseOn ? "Scent active" : "Scent ready"}`
-        : `Cleo · ${senseOn ? "Whiskers active" : "Whiskers ready"}`;
-    senseCopy.textContent =
-      activeCat === "barnaby"
-        ? "Scent sight makes chemical trails glow. Use it near suspicious evidence."
-        : "Whisker resonance reads notes and hollow spaces that Barnaby cannot understand.";
+    if (gameMode === "multi") {
+      detectiveName.textContent = `Co-op · B ${barnabySense ? "scent on" : "scent ready"} · C ${cleoSense ? "whiskers on" : "whiskers ready"}`;
+      senseCopy.textContent =
+        "P1 Barnaby tracks smell with E. P2 Cleo reads notes and hollows with L. Accuse only after four clues.";
+    } else {
+      detectiveName.textContent =
+        activeCat === "barnaby"
+          ? `Barnaby · ${senseOn ? "Scent active" : "Scent ready"}`
+          : `Cleo · ${senseOn ? "Whiskers active" : "Whiskers ready"}`;
+      senseCopy.textContent =
+        activeCat === "barnaby"
+          ? "Scent sight makes chemical trails glow. Use it near suspicious evidence."
+          : "Whisker resonance reads notes and hollow spaces that Barnaby cannot understand.";
+    }
     [...evidenceList.children].forEach((item) => {
       item.classList.toggle("done", Boolean(state.evidence[item.dataset.key]));
     });
@@ -721,7 +1116,7 @@
       ctx.translate(Math.round((Math.random() - 0.5) * sceneShake), Math.round((Math.random() - 0.5) * sceneShake));
     }
     drawRoom();
-    if (senseOn) drawSenseLayer();
+    if (senseOn || barnabySense || cleoSense) drawSenseLayer();
     drawFurniture();
     drawCurtain();
     drawObjects();
@@ -955,6 +1350,25 @@
   }
 
   function drawSenseLayer() {
+    if (gameMode === "multi") {
+      if (barnabySense) {
+        fill(0, 0, W, H, "rgba(22, 52, 78, 0.28)");
+        for (let i = 0; i < 8; i++) {
+          const x = 42 + i * 27 + Math.sin(performance.now() / 220 + i) * 3;
+          const y = 119 - (i % 3) * 14;
+          fill(x, y, 5, 3, i % 2 ? colors.green : colors.violet);
+        }
+      }
+      if (cleoSense) {
+        ctx.strokeStyle = "rgba(240, 174, 72, 0.72)";
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.arc(player2.x + player2.w / 2, player2.y + 10, 17 + i * 8 + sensePulse * 7, -0.4, 0.4);
+          ctx.stroke();
+        }
+      }
+      return;
+    }
     const color = activeCat === "barnaby" ? "rgba(22, 52, 78, 0.48)" : "rgba(71, 43, 17, 0.42)";
     fill(0, 0, W, H, color);
     if (activeCat === "barnaby") {
@@ -974,15 +1388,27 @@
   }
 
   function drawPlayer() {
+    if (gameMode === "multi") {
+      drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0, player);
+      drawCleo(player2.x, player2.y + 1, player2.facing, cleoSwatCooldown > 0, player2);
+      drawPlayerTag(player, "P1", colors.blue);
+      drawPlayerTag(player2, "P2", colors.amber);
+      return;
+    }
     if (activeCat === "barnaby") {
-      drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0);
+      drawBarnaby(player.x, player.y, player.facing, swatCooldown > 0, player);
     } else {
-      drawCleo(player.x, player.y + 1, player.facing, swatCooldown > 0);
+      drawCleo(player.x, player.y + 1, player.facing, swatCooldown > 0, player);
     }
   }
 
-  function drawBarnaby(x, y, facing, pawOut) {
-    const bob = player.onGround ? Math.sin(player.step * 11) * 1 : 0;
+  function drawPlayerTag(actor, label, color) {
+    fill(actor.x + 5, actor.y - 9, 13, 7, "rgba(8, 8, 11, 0.78)");
+    drawPixelText(label, actor.x + 7, actor.y - 4, color, 18);
+  }
+
+  function drawBarnaby(x, y, facing, pawOut, actor = player) {
+    const bob = actor.onGround ? Math.sin(actor.step * 11) * 1 : 0;
     const fx = facing < 0 ? -1 : 1;
     const px = (dx) => x + (fx < 0 ? player.w - dx : dx);
     fill(px(4), y + 7 + bob, 18, 13, colors.cream2);
@@ -1008,8 +1434,8 @@
     fill(px(-4), y + 9 + bob, 8, 4, colors.cream2);
   }
 
-  function drawCleo(x, y, facing, pawOut) {
-    const bob = player.onGround ? Math.sin(player.step * 12) * 1 : 0;
+  function drawCleo(x, y, facing, pawOut, actor = player) {
+    const bob = actor.onGround ? Math.sin(actor.step * 12) * 1 : 0;
     const fx = facing < 0 ? -1 : 1;
     const px = (dx) => x + (fx < 0 ? player.w - dx : dx);
     fill(px(5), y + 9 + bob, 17, 11, "#d2bd91");
@@ -1119,6 +1545,7 @@
     lastTime = time;
     update(dt);
     draw();
+    drawPortrait();
     requestAnimationFrame(loop);
   }
 
@@ -1132,6 +1559,15 @@
       return;
     }
     keys.add(event.key);
+    if (gameMode === "multi") {
+      if ((event.key === "w" || event.key === "W") && !event.repeat) jump();
+      if (event.key === "ArrowUp" && !event.repeat) jumpCleo();
+      if ((event.key === "f" || event.key === "F") && !event.repeat) swat();
+      if ((event.key === "k" || event.key === "K") && !event.repeat) swatCleo();
+      if ((event.key === "e" || event.key === "E") && !event.repeat) toggleBarnabySense();
+      if ((event.key === "l" || event.key === "L") && !event.repeat) toggleCleoSense();
+      return;
+    }
     if ((event.key === " " || event.key === "w" || event.key === "W" || event.key === "ArrowUp") && !event.repeat) jump();
     if ((event.key === "f" || event.key === "F" || event.key === "x" || event.key === "X") && !event.repeat) swat();
     if ((event.key === "e" || event.key === "E") && !event.repeat) toggleSense();
@@ -1172,9 +1608,17 @@
     startPanel.classList.add("hidden");
     beginCutscene(INTRO_SCENES, resetGame);
   });
+  multiplayerButton.addEventListener("click", () => {
+    startPanel.classList.add("hidden");
+    resetMultiplayer();
+  });
   restartButton.addEventListener("click", () => {
     endPanel.classList.add("hidden");
-    beginCutscene(INTRO_SCENES, resetGame);
+    if (gameMode === "multi") {
+      resetMultiplayer();
+    } else {
+      beginCutscene(INTRO_SCENES, resetGame);
+    }
   });
   nextCutsceneButton.addEventListener("click", advanceCutscene);
   skipCutsceneButton.addEventListener("click", endCutscene);

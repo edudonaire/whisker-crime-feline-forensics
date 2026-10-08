@@ -355,6 +355,12 @@ h1 {
   line-height: 1.55;
 }
 
+.mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
 .primary-button {
   border: 0;
   border-radius: 6px;
@@ -385,7 +391,8 @@ h1 {
 .cat-card,
 .meter-block,
 .sense-panel,
-.evidence-list {
+.evidence-list,
+.whodunit-panel {
   border: 1px solid rgba(244, 232, 210, 0.13);
   border-radius: 6px;
   background: rgba(26, 21, 28, 0.88);
@@ -505,6 +512,90 @@ h1 {
   background: var(--green);
   border-color: var(--green);
   box-shadow: 0 0 10px rgba(115, 208, 128, 0.45);
+}
+
+.whodunit-panel {
+  padding: 0.8rem;
+}
+
+.whodunit-panel.hidden {
+  display: none;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  color: var(--amber);
+  font-weight: 800;
+}
+
+.panel-title strong {
+  color: var(--blue);
+  font-size: 0.75rem;
+}
+
+.whodunit-panel p {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.suspect-grid,
+.accuse-grid {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.suspect-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.suspect-card,
+.accuse-grid button {
+  border: 1px solid rgba(244, 232, 210, 0.16);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--paper);
+}
+
+.suspect-card {
+  min-height: 3.6rem;
+  padding: 0.45rem;
+}
+
+.suspect-card strong {
+  display: block;
+  color: #f1d195;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.suspect-card span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.22;
+}
+
+.accuse-grid button {
+  min-height: 2.3rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.accuse-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.accuse-grid button:not(:disabled):hover {
+  border-color: rgba(241, 177, 75, 0.55);
+  background: rgba(241, 177, 75, 0.11);
 }
 
 .controls {
@@ -634,5 +725,17 @@ kbd {
 
   .touch-row button {
     flex: 1 1 28%;
+  }
+
+  .mode-actions {
+    width: 100%;
+  }
+
+  .mode-actions button {
+    flex: 1 1 100%;
+  }
+
+  .suspect-grid {
+    grid-template-columns: 1fr;
   }
 }
