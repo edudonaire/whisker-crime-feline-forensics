@@ -159,7 +159,8 @@
     updateHud();
   }
 
-  const W = 320;
+  const W = 480;
+  const VIEW_W = 320;
   const H = 180;
   const GROUND = 150;
   const GRAVITY = 0.36;
@@ -215,6 +216,7 @@
   let cutsceneDone = null;
   let currentMystery = null;
   let audioContext = null;
+  let cameraX = 0;
 
   function playTone(frequency, duration = 0.08, type = "square", volume = 0.025) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -557,7 +559,7 @@
   }
 
   const curtain = {
-    x: 247,
+    x: 350,
     y: 33,
     w: 45,
     h: 86,
@@ -644,7 +646,7 @@
       step: 0,
     });
     Object.assign(curtain, {
-      x: 247,
+      x: 350,
       y: 33,
       w: 45,
       h: 86,
@@ -716,7 +718,7 @@
       step: 0,
     });
     Object.assign(curtain, {
-      x: 247,
+      x: 350,
       y: 33,
       w: 45,
       h: 86,
@@ -1304,6 +1306,11 @@
     for (const obj of objects) {
       if (obj.broken) continue;
       if (rectsOverlap(paw, obj)) {
+        if (obj.id === "ink" && !state.evidence.floor && !canReadFloorClue(actor)) {
+          hit = true;
+          setMessage("The ink needs Cleo's whiskers, not another hit.", actor.x - 18, actor.y - 12, colors.amber);
+          continue;
+        }
         hit = true;
         obj.dynamic = true;
         obj.vx += actor.facing * (2.2 + Math.random() * 0.5);
@@ -1334,12 +1341,16 @@
     }
   }
 
+  function canReadFloorClue(actor = player) {
+    return gameMode === "multi" ? actor === player2 && cleoSense : activeCat === "cleo" && senseOn;
+  }
+
   function inspectNearby() {
     if (!senseOn || !started || ended || cutsceneActive) return;
     const centerX = player.x + player.w / 2;
 
     if (activeCat === "barnaby") {
-      if (Math.abs(centerX - 266) < 52 && !state.evidence.trail) {
+      if (Math.abs(centerX - 370) < 52 && !state.evidence.trail) {
         markEvidence("trail", "Oily feathers. The trail climbs to the curtain rod.");
       }
       if (state.evidence.floor && Math.abs(centerX - 151) < 34 && !state.evidence.scent) {
@@ -1349,6 +1360,10 @@
       if (state.evidence.floor && Math.abs(centerX - 146) < 34 && !state.evidence.note) {
         markEvidence("note", "The note reads: garden gate, 3 AM, bring feathers.");
       }
+      const ink = objects.find((object) => object.id === "ink" && !object.broken);
+      if (!state.evidence.floor && ink && Math.abs(centerX - (ink.x + ink.w / 2)) < 36) {
+        markEvidence("floor", "Cleo hears the hidden compartment beneath the ink.");
+      }
     }
   }
 
@@ -1357,7 +1372,7 @@
     const barnabyX = player.x + player.w / 2;
     const cleoX = player2.x + player2.w / 2;
     if (barnabySense) {
-      if (Math.abs(barnabyX - 266) < 52 && !state.evidence.trail) {
+      if (Math.abs(barnabyX - 370) < 52 && !state.evidence.trail) {
         markEvidence("trail", "Barnaby finds a feather trail that refuses to behave.", player);
       }
       if (state.evidence.floor && Math.abs(barnabyX - 151) < 38 && !state.evidence.scent) {
@@ -1366,6 +1381,10 @@
     }
     if (cleoSense && state.evidence.floor && Math.abs(cleoX - 146) < 38 && !state.evidence.note) {
       markEvidence("note", "Cleo reads the note the floor tried to swallow.", player2);
+    }
+    const ink = objects.find((object) => object.id === "ink" && !object.broken);
+    if (cleoSense && !state.evidence.floor && ink && Math.abs(cleoX - (ink.x + ink.w / 2)) < 40) {
+      markEvidence("floor", "Cleo hears the hidden compartment beneath the ink.", player2);
     }
   }
 
@@ -1530,10 +1549,17 @@
         obj.vx *= 0.78;
         if (Math.abs(obj.vy) < 0.7) obj.vy = 0;
         if (obj.id === "ink" && !state.evidence.floor) {
-          obj.broken = true;
-          state.broken += 1;
-          markEvidence("floor", "Black ink drains into a hidden floorboard seam.");
-          addParticles(obj.x + obj.w / 2, obj.y + obj.h, 24, "#17151d", 2.5);
+          if (canReadFloorClue()) {
+            obj.broken = true;
+            state.broken += 1;
+            markEvidence("floor", "Black ink drains into a hidden floorboard seam.");
+            addParticles(obj.x + obj.w / 2, obj.y + obj.h, 24, "#17151d", 2.5);
+          } else {
+            obj.dynamic = false;
+            obj.vx = 0;
+            obj.vy = 0;
+            setMessage("The ink splashes, but the real clue is still hidden.", obj.x - 18, obj.y - 12, colors.amber);
+          }
         } else if (obj.precious && Math.abs(obj.vx) > 0.9) {
           obj.broken = true;
           state.broken += 1;
@@ -1568,12 +1594,12 @@
 
   function maybeStartInterrogation() {
     if (solved || !state.evidence.note || !state.evidence.scent) return;
-    if (player.x > 266) {
+    if (player.x > 410) {
       solved = true;
       state.evidence.buster = true;
       updateHud();
       storyBeat("buster");
-    } else if (player.x > 238) {
+    } else if (player.x > 382) {
       setMessage("Pet door ahead. Buster is pacing by the garden gate.", 184, 82, colors.amber);
     }
   }
@@ -1622,10 +1648,15 @@
 
   function draw() {
     ctx.imageSmoothingEnabled = false;
+    const focusX = gameMode === "multi"
+      ? (player.x + player2.x + player.w + player2.w) / 2
+      : player.x + player.w / 2;
+    cameraX = clamp(focusX - VIEW_W * 0.42, 0, W - VIEW_W);
     ctx.save();
     if (sceneShake > 0) {
       ctx.translate(Math.round((Math.random() - 0.5) * sceneShake), Math.round((Math.random() - 0.5) * sceneShake));
     }
+    ctx.translate(-Math.round(cameraX), 0);
     drawRoom();
     if (senseOn || barnabySense || cleoSense) drawSenseLayer();
     drawFurniture();
@@ -1634,6 +1665,11 @@
     drawClues();
     drawPlayer();
     drawEffects();
+    ctx.restore();
+    ctx.save();
+    if (sceneShake > 0) {
+      ctx.translate(Math.round((Math.random() - 0.5) * sceneShake), Math.round((Math.random() - 0.5) * sceneShake));
+    }
     drawDialogue();
     drawLightning();
     ctx.restore();
@@ -1665,6 +1701,7 @@
     drawRug();
     drawCage();
     drawPetDoor();
+    drawHallway();
   }
 
   function drawWindow() {
@@ -1740,23 +1777,37 @@
   }
 
   function drawPetDoor() {
-    fill(291, 119, 19, 31, "#0d0d12");
-    fill(294, 123, 13, 27, "#2a1c1c");
-    fill(297, 128, 7, 22, "#131116");
+    fill(438, 119, 19, 31, "#0d0d12");
+    fill(441, 123, 13, 27, "#2a1c1c");
+    fill(444, 128, 7, 22, "#131116");
     if (state.evidence.note && state.evidence.scent) {
-      fill(289, 115, 24, 4, colors.green);
+      fill(436, 115, 24, 4, colors.green);
       drawTinyBuster();
     }
   }
 
+  function drawHallway() {
+    fill(320, 18, 148, 108, "#15121a");
+    fill(326, 27, 42, 82, "#271b22");
+    fill(330, 31, 34, 74, "#3a2730");
+    fill(382, 35, 52, 4, colors.gold);
+    fill(386, 39, 4, 64, "#4b2d25");
+    fill(426, 39, 4, 64, "#4b2d25");
+    fill(389, 51, 38, 3, "#6b4230");
+    fill(389, 72, 38, 3, "#6b4230");
+    fill(389, 93, 38, 3, "#6b4230");
+    fill(466, 20, 3, 106, "#3a2526");
+    fill(320, 126, 148, 30, "#2a181c");
+  }
+
   function drawTinyBuster() {
-    fill(284, 128, 18, 12, "#9b7b60");
-    fill(278, 125, 10, 11, "#a98866");
-    fill(279, 123, 4, 4, "#6b503f");
-    fill(286, 124, 4, 4, "#6b503f");
-    fill(281, 130, 2, 2, "#111018");
-    fill(287, 130, 2, 2, "#111018");
-    fill(275, 122, 4, 9, "#7f5e48");
+    fill(431, 128, 18, 12, "#9b7b60");
+    fill(425, 125, 10, 11, "#a98866");
+    fill(426, 123, 4, 4, "#6b503f");
+    fill(433, 124, 4, 4, "#6b503f");
+    fill(428, 130, 2, 2, "#111018");
+    fill(434, 130, 2, 2, "#111018");
+    fill(422, 122, 4, 9, "#7f5e48");
   }
 
   function drawFurniture() {
@@ -1780,9 +1831,9 @@
 
   function drawCurtain() {
     if (curtain.fallen) {
-      fill(229, curtain.y + 36, 60, 10, "#702633");
-      fill(239, curtain.y + 27, 45, 11, "#8d3040");
-      fill(247, curtain.y + 20, 30, 9, "#5d1d2d");
+      fill(332, curtain.y + 36, 60, 10, "#702633");
+      fill(342, curtain.y + 27, 45, 11, "#8d3040");
+      fill(350, curtain.y + 20, 30, 9, "#5d1d2d");
       return;
     }
     fill(curtain.x - 3, 30, curtain.w + 6, 6, "#614326");
