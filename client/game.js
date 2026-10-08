@@ -385,6 +385,57 @@
     ],
   };
 
+  const STORY_BEATS_LOCALIZED = {
+    es: {
+      trail: ["Escena I", "Plumas en el trueno.", "Un rastro verde cruza la oscuridad como una confesion con alas. Sir Reginald no volo: alguien lo llevo.", "Derriba la cortina y sigue el brillo."],
+      floor: ["Escena II", "La tinta delata al suelo.", "La botella cae. El suelo bebe. Una junta oculta aparece, fina como una sonrisa culpable.", "Cambia a Cleo y lee lo que la mansion quiso enterrar."],
+      note: ["Escena III", "Nos vemos en la entrada del jardin.", "La nota es corta, humeda y grosera: 3 AM. Trae plumas. Alguien vendio un pajaro por crema de cacahuete.", "Vuelve con Barnaby para olfatear la cuerda mordida."],
+      scent: ["Escena IV", "Champu de perro. Crema de cacahuete barata.", "Barnaby reconoce el olor. Buster, el bulldog de patas nerviosas, se ha acercado demasiado a la verdad.", "Llega a la puerta de mascotas y acorrala a Buster."],
+      buster: ["Escena final", "El bulldog se quiebra.", "Buster confiesa. La Paloma del Callejon pago con crema de cacahuete y Sir Reginald descubrio el sindicato de migas.", "Caso cerrado. Mas o menos."],
+    },
+    "pt-BR": {
+      trail: ["Cena I", "Penas no trovão.", "Uma trilha verde corta a escuridão como uma confissão com asas. Sir Reginald não voou. Alguém o carregou.", "Derrube a cortina e siga o brilho."],
+      floor: ["Cena II", "A tinta entrega o assoalho.", "A garrafa quebra. O chão bebe. Uma fresta escondida aparece, fina como um sorriso culpado.", "Troque para Cleo e leia o que a mansão tentou enterrar."],
+      note: ["Cena III", "Encontro no portão do jardim.", "O bilhete é curto, molhado e rude: 3 da manhã. Traga penas. Alguém vendeu um pássaro por pasta de amendoim.", "Traga Barnaby para farejar a corda mordida."],
+      scent: ["Cena IV", "Xampu de cachorro. Pasta de amendoim barata.", "Barnaby conhece esse cheiro. Buster, o bulldog de patas nervosas, está perto demais da verdade.", "Chegue à portinhola e encurrale Buster."],
+      buster: ["Cena final", "O bulldog cede.", "Buster confessa. O Pombo da Viela pagou com pasta de amendoim e Sir Reginald descobriu o sindicato das migalhas.", "Caso encerrado. Mais ou menos."],
+    },
+    fr: {
+      trail: ["Scene I", "Des plumes dans le tonnerre.", "Une piste verte traverse la nuit comme un aveu aile. Sir Reginald ne s'est pas envole: on l'a emporte.", "Arrachez le rideau et suivez la lueur."],
+      floor: ["Scene II", "L'encre accuse le sol.", "La bouteille tombe. Le plancher boit. Une fente apparait, fine comme un sourire coupable.", "Passez a Cleo et lisez ce que le manoir voulait enfouir."],
+      note: ["Scene III", "Rendez-vous au portail du jardin.", "La note est courte, mouillee et grossiere: 3 h. Apportez des plumes. Quelqu'un a vendu un oiseau contre du beurre de cacahuete.", "Ramenez Barnaby renifler la ficelle mordillee."],
+      scent: ["Scene IV", "Shampoing pour chien. Beurre de cacahuete bon marche.", "Barnaby connait cette odeur. Buster, le bouledogue aux pattes nerveuses, s'est trop approche de la verite.", "Atteignez la chatiere et coincez Buster."],
+      buster: ["Scene finale", "Le bouledogue craque.", "Buster avoue. Le Pigeon de la ruelle l'a paye en beurre de cacahuete et Sir Reginald a decouvert le syndicat des miettes.", "Affaire classee. Presque."],
+    },
+    de: {
+      trail: ["Szene I", "Federn im Donner.", "Eine grune Spur brennt durch die Dunkelheit wie ein Gestandnis mit Flugeln. Sir Reginald flog nicht davon. Er wurde getragen.", "Reisse den Vorhang herunter und folge dem Leuchten."],
+      floor: ["Szene II", "Tinte verrat den Boden.", "Die Flasche zerbricht. Der Boden trinkt. Eine verborgene Fuge erscheint, schmal wie ein schuldiges Lacheln.", "Wechsle zu Cleo und lies, was das Herrenhaus begraben wollte."],
+      note: ["Szene III", "Treffen am Gartentor.", "Die Notiz ist kurz, nass und unhoflich: 3 Uhr. Bring Federn. Jemand verkaufte einen Vogel fur Erdnussbutter.", "Hol Barnaby, damit er an der zerbissenen Schnur schnuppert."],
+      scent: ["Szene IV", "Hundeshampoo. Billige Erdnussbutter.", "Barnaby kennt den Geruch. Buster, die nervose Bulldogge, steht der Wahrheit zu nah.", "Erreiche die Tierklappe und stelle Buster."],
+      buster: ["Finale", "Die Bulldogge bricht.", "Buster gesteht. Die Gassen-Taube bezahlte mit Erdnussbutter und Sir Reginald entdeckte das Brotkrumensyndikat.", "Fall gelost. Fast."],
+    },
+    it: {
+      trail: ["Scena I", "Piume nel tuono.", "Una scia verde attraversa il buio come una confessione alata. Sir Reginald non e volato via. E stato portato.", "Strappa la tenda e segui il bagliore."],
+      floor: ["Scena II", "L'inchiostro accusa il pavimento.", "La bottiglia cade. Il pavimento beve. Compare una fessura nascosta, sottile come un sorriso colpevole.", "Passa a Cleo e leggi cio che il palazzo voleva seppellire."],
+      note: ["Scena III", "Appuntamento al cancello del giardino.", "Il biglietto e breve, umido e scortese: le 3. Porta piume. Qualcuno ha venduto un uccello per burro d'arachidi.", "Riporta Barnaby ad annusare lo spago morso."],
+      scent: ["Scena IV", "Shampoo per cani. Burro d'arachidi economico.", "Barnaby riconosce l'odore. Buster, il bulldog dalle zampe nervose, si e avvicinato troppo alla verita.", "Raggiungi la porticina e metti alle strette Buster."],
+      buster: ["Scena finale", "Il bulldog cede.", "Buster confessa. Il Piccione del Vicolo lo ha pagato con burro d'arachidi e Sir Reginald ha scoperto il sindacato delle briciole.", "Caso chiuso. Quasi."],
+    },
+    ja: {
+      trail: ["シーンI", "雷鳴の中の羽根。", "緑の跡が翼のある告白のように闇を走る。サー・レジナルドは飛んでいない。運ばれたのだ。", "カーテンを倒して光を追おう。"],
+      floor: ["シーンII", "インクが床を告発する。", "瓶が割れ、床がインクを飲む。罪のある笑みのように細い隙間が現れる。", "クレオに交代して屋敷が隠したものを読もう。"],
+      note: ["シーンIII", "庭の門で待ち合わせ。", "メモは短く、濡れていて、失礼だった。午前3時。羽根を持ってこい。誰かが鳥をピーナッツバターで売った。", "バーナビーを呼び、噛まれたひもを嗅ごう。"],
+      scent: ["シーンIV", "犬用シャンプー。安いピーナッツバター。", "バーナビーはその匂いを知っている。神経質な足のブルドッグ、バスターは真実に近づきすぎている。", "ペットドアへ向かい、バスターを追い詰めよう。"],
+      buster: ["最終シーン", "ブルドッグが折れる。", "バスターは告白した。路地裏のハトはピーナッツバターで彼を買収し、レジナルドはパンくず組織を知ってしまった。", "事件解決。たぶん。"],
+    },
+  };
+
+  function localizedStoryBeat(key) {
+    const translation = STORY_BEATS_LOCALIZED[language]?.[key];
+    if (!translation) return STORY_BEATS[key];
+    return [{ kicker: translation[0], title: translation[1], copy: translation[2], objective: translation[3], cta: key === "buster" ? "Close Case" : "Continue" }];
+  }
+
   const MYSTERIES = [
     {
       id: "Case P-17",
@@ -808,7 +859,7 @@
 
   function storyBeat(key) {
     if (!STORY_BEATS[key]) return;
-    beginCutscene(STORY_BEATS[key], () => {
+    beginCutscene(localizedStoryBeat(key), () => {
       if (key === "buster") {
         finish(
           true,
