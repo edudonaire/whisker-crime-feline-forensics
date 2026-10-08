@@ -56,6 +56,7 @@
   const clueToastCopy = document.getElementById("clueToastCopy");
   const languageSelect = document.getElementById("languageSelect");
   const languageLabel = document.getElementById("languageLabel");
+  const musicToggleButton = document.getElementById("musicToggleButton");
 
   const LANGUAGES = {
     en: {
@@ -128,6 +129,12 @@
     };
     document.getElementById("brandSubtitle").textContent = subtitles[language] || subtitles.en;
     document.title = `Whisker & Crime: ${subtitles[language] || subtitles.en}`;
+    const musicLabels = {
+      en: ["Music: On", "Music: Off"], es: ["Musica: Si", "Musica: No"], "pt-BR": ["Musica: Ligada", "Musica: Desligada"],
+      fr: ["Musique: Oui", "Musique: Non"], de: ["Musik: An", "Musik: Aus"], it: ["Musica: On", "Musica: Off"], ja: ["音楽: オン", "音楽: オフ"],
+    }[language] || ["Music: On", "Music: Off"];
+    musicToggleButton.textContent = musicEnabled ? musicLabels[0] : musicLabels[1];
+    musicToggleButton.setAttribute("aria-pressed", String(musicEnabled));
     document.getElementById("detectiveLabel").textContent = current.detective;
     document.getElementById("roomCodeLabel").textContent = current.room;
     document.getElementById("leadDetectiveLabel").textContent = current.lead;
@@ -220,6 +227,10 @@
   let audioContext = null;
   let cameraX = 0;
   let idleTime = 0;
+  let musicEnabled = localStorage.getItem("whiskerMusic") !== "off";
+  let musicTimer = null;
+  let musicStep = 0;
+  let musicNextTime = 0;
 
   function playTone(frequency, duration = 0.08, type = "square", volume = 0.025) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -237,6 +248,59 @@
     } catch {
       audioContext = null;
     }
+  }
+
+  const MUSIC_MELODY = [
+    392, 0, 466, 523, 0, 466, 392, 349,
+    392, 0, 466, 587, 0, 523, 466, 392,
+  ];
+  const MUSIC_BASS = [196, 196, 233, 233, 175, 175, 196, 196];
+
+  function scheduleMusicNote(frequency, time, duration, type, volume) {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, time);
+    gain.gain.setValueAtTime(volume, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.start(time);
+    oscillator.stop(time + duration);
+  }
+
+  function scheduleMusic() {
+    if (!musicEnabled || !audioContext) return;
+    const lookAhead = 0.22;
+    const beat = 60 / 104 / 2;
+    while (musicNextTime < audioContext.currentTime + lookAhead) {
+      const melody = MUSIC_MELODY[musicStep % MUSIC_MELODY.length];
+      const bass = MUSIC_BASS[musicStep % MUSIC_BASS.length];
+      if (melody) scheduleMusicNote(melody, musicNextTime, beat * 0.82, "square", 0.022);
+      scheduleMusicNote(bass, musicNextTime, beat * 0.7, "triangle", 0.018);
+      if (musicStep % 2 === 0) scheduleMusicNote(98, musicNextTime, 0.04, "sine", 0.012);
+      musicStep += 1;
+      musicNextTime += beat;
+    }
+    musicTimer = window.setTimeout(scheduleMusic, 70);
+  }
+
+  function startMusic() {
+    if (!musicEnabled) return;
+    try {
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      audioContext.resume?.();
+      if (!musicTimer) {
+        musicNextTime = audioContext.currentTime + 0.04;
+        scheduleMusic();
+      }
+    } catch {
+      audioContext = null;
+    }
+  }
+
+  function stopMusic() {
+    if (musicTimer) window.clearTimeout(musicTimer);
+    musicTimer = null;
   }
 
   const online = {
@@ -2267,6 +2331,7 @@
 
   document.addEventListener("keydown", (event) => {
     idleTime = 0;
+    startMusic();
     if (["ArrowLeft", "ArrowRight", "ArrowUp", " ", "Tab"].includes(event.key)) {
       event.preventDefault();
     }
@@ -2419,6 +2484,14 @@
     localStorage.setItem("whiskerLanguage", language);
     applyLanguage();
   });
+  musicToggleButton.addEventListener("click", () => {
+    musicEnabled = !musicEnabled;
+    localStorage.setItem("whiskerMusic", musicEnabled ? "on" : "off");
+    if (musicEnabled) startMusic();
+    else stopMusic();
+    applyLanguage();
+  });
+  document.addEventListener("pointerdown", startMusic, { passive: true });
 
   resetObjects();
   playerNameInput.value = localStorage.getItem("whiskerDetectiveName") || "";
