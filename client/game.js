@@ -19,6 +19,7 @@
   const endChip = document.getElementById("endChip");
   const endTitle = document.getElementById("endTitle");
   const endCopy = document.getElementById("endCopy");
+  const endStats = document.getElementById("endStats");
   const restartButton = document.getElementById("restartButton");
   const cutscene = document.getElementById("cutscene");
   const cutsceneKicker = document.getElementById("cutsceneKicker");
@@ -33,6 +34,8 @@
   const detectiveName = document.getElementById("detectiveName");
   const senseCopy = document.getElementById("senseCopy");
   const evidenceList = document.getElementById("evidenceList");
+  const caseProgressLabel = document.getElementById("caseProgressLabel");
+  const caseProgress = document.getElementById("caseProgress");
   const whodunitPanel = document.getElementById("whodunitPanel");
   const mysterySeed = document.getElementById("mysterySeed");
   const whodunitStatus = document.getElementById("whodunitStatus");
@@ -56,6 +59,7 @@
       startCopy: "Sir Reginald sang one forbidden name, then vanished before dawn. Create a live room, share the code, and solve a synchronized whodunit from any phone or laptop.",
       lobby: "First two players control Barnaby and Cleo. Extra players join the clue board and accusation vote.",
       bio: "Blue eyes, cream fur, gray mask, tiny trench coat. Excellent at finding evidence. Terrible at respecting heirlooms.",
+      caseProgress: "Case progress",
       labels: { trail: "Find the canary trail", floor: "Expose the floorboard compartment", note: "Read the hidden note", scent: "Identify the peanut-butter scent", buster: "Crack Buster's story" },
     },
     es: {
@@ -112,6 +116,7 @@
     document.getElementById("chaosLabel").textContent = current.chaos;
     document.getElementById("whodunitLabel").textContent = current.whodunit;
     document.getElementById("onlineRoomLabel").textContent = current.onlineRoom;
+    caseProgressLabel.textContent = current.caseProgress || LANGUAGES.en.caseProgress;
     document.getElementById("onlineKeysLabel").firstChild.textContent = `${current.online} `;
     document.getElementById("p1KeysLabel").firstChild.textContent = "P1 ";
     document.getElementById("p2KeysLabel").firstChild.textContent = "P2 ";
@@ -1456,6 +1461,8 @@
     endChip.textContent = chip;
     endTitle.textContent = won ? "Sir Reginald is saved." : "The trail goes cold.";
     endCopy.textContent = `${copy} Security cam recap: ${state.swats} swats, ${state.broken} broken objects, ${Math.round(state.chaos)}% chaos.`;
+    const clues = Object.values(state.evidence).filter(Boolean).length;
+    endStats.innerHTML = `<span>${clues}/5 clues</span><span>${state.swats} swats</span><span>${state.broken} objects broken</span><span>${Math.round(state.chaos)}% chaos</span>`;
     endPanel.classList.remove("hidden");
   }
 
@@ -1465,6 +1472,8 @@
     clockEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     chaosText.textContent = `${Math.round(state.chaos)}%`;
     chaosBar.style.width = `${state.chaos}%`;
+    const clueCount = Object.values(state.evidence).filter(Boolean).length;
+    caseProgress.textContent = `${clueCount}/5`;
     if (gameMode === "multi" || online.enabled) {
       detectiveName.textContent = online.enabled
         ? `${online.role || "Online"} · B ${barnabySense ? "scent on" : "scent ready"} · C ${cleoSense ? "whiskers on" : "whiskers ready"}`

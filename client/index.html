@@ -74,6 +74,11 @@
                   Local Co-op
                 </button>
               </div>
+              <div class="start-meta" aria-label="Game details">
+                <span>1–8 players</span>
+                <span>4–5 min case</span>
+                <span>7 languages</span>
+              </div>
               <div class="online-lobby hidden" id="onlineLobby" aria-label="Online room setup">
                 <label>
                   <span id="detectiveLabel">Detective name</span>
@@ -119,6 +124,7 @@
               <div class="noir-chip" id="endChip">Case closed</div>
               <h2 id="endTitle">Sir Reginald is saved.</h2>
               <p id="endCopy"></p>
+              <div class="end-stats" id="endStats" aria-label="Case recap"></div>
               <button id="restartButton" class="primary-button" type="button">
                 Replay Case
               </button>
@@ -163,6 +169,10 @@
               <li data-key="scent">Identify the peanut-butter scent</li>
               <li data-key="buster">Crack Buster's story</li>
             </ol>
+            <div class="case-progress" aria-live="polite">
+              <span id="caseProgressLabel">Case progress</span>
+              <strong id="caseProgress">0/5</strong>
+            </div>
 
             <div class="whodunit-panel hidden" id="whodunitPanel">
               <div class="panel-title">

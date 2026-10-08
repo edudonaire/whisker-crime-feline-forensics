@@ -41,6 +41,13 @@ kbd {
   font: inherit;
 }
 
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
 .shell {
   min-height: 100svh;
   display: grid;
@@ -388,6 +395,29 @@ h1 {
   gap: 0.7rem;
 }
 
+.start-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.start-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.start-meta span::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 8px rgba(87, 183, 232, 0.55);
+}
+
 .online-lobby {
   width: min(34rem, 100%);
   display: grid;
@@ -459,6 +489,12 @@ h1 {
 .primary-button:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 #8d5e21;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.5;
 }
 
 .casefile {
@@ -592,6 +628,42 @@ h1 {
   background: var(--green);
   border-color: var(--green);
   box-shadow: 0 0 10px rgba(115, 208, 128, 0.45);
+}
+
+.evidence-list li {
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.evidence-list li.done {
+  transform: translateX(2px);
+}
+
+.case-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.25rem 0.2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.case-progress strong {
+  color: var(--green);
+}
+
+.end-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.end-stats span {
+  border: 1px solid rgba(244, 232, 210, 0.16);
+  border-radius: 4px;
+  padding: 0.42rem 0.55rem;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .whodunit-panel {
