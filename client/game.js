@@ -170,7 +170,7 @@
     updateHud();
   }
 
-  const W = 480;
+  const W = 640;
   const VIEW_W = 320;
   const H = 180;
   const GROUND = 150;
@@ -1755,12 +1755,12 @@
 
   function maybeStartInterrogation() {
     if (solved || !state.evidence.note || !state.evidence.scent) return;
-    if (player.x > 410) {
+    if (player.x > 570) {
       solved = true;
       state.evidence.buster = true;
       updateHud();
       storyBeat("buster");
-    } else if (player.x > 382) {
+    } else if (player.x > 535) {
       setMessage("Pet door ahead. Buster is pacing by the garden gate.", 184, 82, colors.amber);
     }
   }
@@ -1858,12 +1858,35 @@
       fill(x + 2, GROUND + 16, 26, 2, "#5e3829");
     }
 
+    drawArchitecture();
+
     drawWindow();
     drawRain();
     drawRug();
     drawCage();
     drawPetDoor();
     drawHallway();
+  }
+
+  function drawArchitecture() {
+    // Large repeating shapes make the manor read as a place, not a flat backdrop.
+    for (let x = 88; x < W - 20; x += 96) {
+      fill(x, 18, 2, 106, "#0c0b12");
+      fill(x + 3, 20, 1, 104, "rgba(125, 78, 58, 0.28)");
+      fill(x + 12, 23, 50, 2, "#30202a");
+    }
+    for (let x = 92; x < W - 40; x += 128) {
+      fill(x, 30, 42, 28, "#201923");
+      fill(x + 3, 33, 36, 22, "#332238");
+      fill(x + 6, 36, 30, 16, x % 256 ? "#3c6370" : "#75434e");
+      fill(x + 3, 56, 36, 3, "#6a4639");
+    }
+    for (let x = 112; x < W - 20; x += 144) {
+      fill(x, 72, 5, 4, colors.gold);
+      fill(x + 2, 76, 1, 13, "#8d5a2d");
+      fill(x - 4, 88, 13, 2, "#c17e34");
+      fill(x - 2, 90, 9, 3, "#efb85a");
+    }
   }
 
   function drawWindow() {
@@ -1939,37 +1962,40 @@
   }
 
   function drawPetDoor() {
-    fill(438, 119, 19, 31, "#0d0d12");
-    fill(441, 123, 13, 27, "#2a1c1c");
-    fill(444, 128, 7, 22, "#131116");
+    fill(598, 119, 22, 31, "#0d0d12");
+    fill(601, 123, 16, 27, "#2a1c1c");
+    fill(604, 128, 10, 22, "#131116");
     if (state.evidence.note && state.evidence.scent) {
-      fill(436, 115, 24, 4, colors.green);
-      drawTinyBuster();
+      fill(595, 115, 29, 4, colors.green);
+      drawTinyBuster(591);
     }
   }
 
   function drawHallway() {
-    fill(320, 18, 148, 108, "#15121a");
-    fill(326, 27, 42, 82, "#271b22");
-    fill(330, 31, 34, 74, "#3a2730");
-    fill(382, 35, 52, 4, colors.gold);
-    fill(386, 39, 4, 64, "#4b2d25");
-    fill(426, 39, 4, 64, "#4b2d25");
-    fill(389, 51, 38, 3, "#6b4230");
-    fill(389, 72, 38, 3, "#6b4230");
-    fill(389, 93, 38, 3, "#6b4230");
-    fill(466, 20, 3, 106, "#3a2526");
-    fill(320, 126, 148, 30, "#2a181c");
+    fill(320, 18, 300, 108, "#15121a");
+    for (let x = 326; x < 620; x += 48) {
+      fill(x, 27, 42, 82, x % 96 ? "#271b22" : "#2e202b");
+      fill(x + 4, 32, 34, 72, x % 96 ? "#3a2730" : "#473041");
+      fill(x + 8, 52, 26, 3, "#6b4230");
+      fill(x + 8, 74, 26, 3, "#6b4230");
+      fill(x + 8, 96, 26, 3, "#6b4230");
+    }
+    for (let x = 340; x < 620; x += 72) {
+      fill(x, 35, 3, 4, colors.gold);
+      fill(x + 1, 39, 1, 8, "#8d5a2d");
+      fill(x - 4, 47, 11, 2, "#efb85a");
+    }
+    fill(320, 126, 300, 30, "#2a181c");
   }
 
-  function drawTinyBuster() {
-    fill(431, 128, 18, 12, "#9b7b60");
-    fill(425, 125, 10, 11, "#a98866");
-    fill(426, 123, 4, 4, "#6b503f");
-    fill(433, 124, 4, 4, "#6b503f");
-    fill(428, 130, 2, 2, "#111018");
-    fill(434, 130, 2, 2, "#111018");
-    fill(422, 122, 4, 9, "#7f5e48");
+  function drawTinyBuster(offset = 0) {
+    fill(offset + 8, 128, 18, 12, "#9b7b60");
+    fill(offset + 2, 125, 10, 11, "#a98866");
+    fill(offset + 3, 123, 4, 4, "#6b503f");
+    fill(offset + 10, 124, 4, 4, "#6b503f");
+    fill(offset + 5, 130, 2, 2, "#111018");
+    fill(offset + 11, 130, 2, 2, "#111018");
+    fill(offset - 1, 122, 4, 9, "#7f5e48");
   }
 
   function drawFurniture() {
